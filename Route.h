@@ -1,0 +1,14 @@
+//
+// Created by Alexandre Lemos on 15/08/2018.
+//
+
+#ifndef TRAIN_SCHEDULE_OPTIMISATION_ROUTE_H
+#define TRAIN_SCHEDULE_OPTIMISATION_ROUTE_H
+
+
+class Route {
+
+};
+
+
+#endif //TRAIN_SCHEDULE_OPTIMISATION_ROUTE_H

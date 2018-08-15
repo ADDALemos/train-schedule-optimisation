@@ -1,0 +1,3 @@
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/cmake-build-debug/CMakeFiles/train_schedule_optimisation.dir
