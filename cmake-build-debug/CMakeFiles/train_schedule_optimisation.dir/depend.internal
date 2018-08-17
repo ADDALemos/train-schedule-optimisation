@@ -8,6 +8,8 @@ CMakeFiles/train_schedule_optimisation.dir/Train.cpp.o
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/Instance.h
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/Requirement.h
+ /Volumes/MAC/ClionProjects/train-schedule-optimisation/Resource.h
+ /Volumes/MAC/ClionProjects/train-schedule-optimisation/Route.h
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/Train.h
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/include/rapidjson/allocators.h
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/include/rapidjson/document.h
@@ -35,3 +37,5 @@ CMakeFiles/train_schedule_optimisation.dir/main.cpp.o
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/include/rapidjson/stringbuffer.h
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/include/rapidjson/writer.h
  /Volumes/MAC/ClionProjects/train-schedule-optimisation/main.cpp
+ /Volumes/MAC/ClionProjects/train-schedule-optimisation/route_path.h
+ /Volumes/MAC/ClionProjects/train-schedule-optimisation/route_section.h

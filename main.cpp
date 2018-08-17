@@ -9,6 +9,12 @@
 #include <fstream>
 #include "Instance.h"
 #include "Train.h"
+#include "Resource.h"
+#include "Route.h"
+#include "route_path.h"
+#include "route_section.h"
+
+
 
 Instance readJSONFile();
 
@@ -157,6 +163,72 @@ Instance readJSONFile() {
             }
         }
     }
+    Route r;
+   for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
+        r.id=d["routes"].GetArray()[m]["id"].GetInt();
+       std::list<route_path> rpl;
+       route_path rp;
+        for (int i = 0; i < d["routes"].GetArray()[m]["route_paths"].GetArray().Size(); ++i) {
+            rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetString();
+            std::list<route_section> rsl;
+            route_section rs;
+            for (int j = 0; j < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size(); ++j) {
+                rs.sequence_number=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["sequence_number"].GetInt();
+                if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("route_alternative_marker_at_entry")) {
+                    std::list<std::string> temp;
+                    for (int k = 0; k < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray().Size(); ++k) {
+                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString());
+                    }
+                    rs.route_alternative_marker_at_entry=temp;
+                }
+                if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("section_marker")){
+                    std::list<std::string> temp;
+                    for (int k = 0; k < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray().Size(); ++k) {
+                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString());
+                    }
+                    rs.section_marke=temp;
+                }
+                if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("resource_occupations"))
+                {
+                    std::list<Resource> temp;
+                    for (int k = 0; k < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray().Size(); ++k) {
+                        Resource r;
+                        if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray()[k]["occupation_direction"].IsString())
+                            r= Resource(                        d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray()[k]["resource"].GetString()
+                                    ,d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray()[k]["occupation_direction"].GetString());
+                        else
+                            r=Resource(                        d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray()[k]["resource"].GetString());
+
+                        temp.push_front(r);
+                    }
+                    rs.resource_occupations=temp;
+                }
+                if(!d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].IsNull())
+                    rs.penalty=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
+                rs.starting_point=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
+                rs.minimum_running_time=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
+                rs.ending_point=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["ending_point"].GetString();
+
+
+            }
+            rsl.push_front(rs);
+            rp.route_section=rsl;
+
+        }
+       rpl.push_front(rp);
+       r.route_path=rpl;
+        
+    }
+
+    
+    std::list<Resource> reso;
+    for (int l = 0; l < d["resources"].GetArray().Size(); ++l) {
+        Resource resource = Resource(d["resources"].GetArray()[l]["id"].GetString(),d["resources"].GetArray()[l]["release_time"].GetString(),d["resources"].GetArray()[l]["following_allowed"].GetBool());
+        std::cout<<resource<<std::endl;
+        reso.push_front(resource);
+
+    }
+    Instance.maxBandabweichung=d["parameters"].GetObject()["maxBandabweichung"].GetString();
 
     return Instance;
 }

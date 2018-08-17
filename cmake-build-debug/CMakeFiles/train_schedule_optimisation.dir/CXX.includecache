@@ -18,6 +18,16 @@ list
 iostream
 -
 
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/Resource.h
+
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/Route.h
+string
+-
+list
+-
+route_path.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/route_path.h
+
 /Volumes/MAC/ClionProjects/train-schedule-optimisation/Train.cpp
 Train.h
 /Volumes/MAC/ClionProjects/train-schedule-optimisation/Train.h
@@ -279,4 +289,28 @@ Instance.h
 /Volumes/MAC/ClionProjects/train-schedule-optimisation/Instance.h
 Train.h
 /Volumes/MAC/ClionProjects/train-schedule-optimisation/Train.h
+Resource.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/Resource.h
+Route.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/Route.h
+route_path.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/route_path.h
+route_section.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/route_section.h
+
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/route_path.h
+string
+-
+list
+-
+route_section.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/route_section.h
+
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/route_section.h
+string
+-
+list
+-
+Resource.h
+/Volumes/MAC/ClionProjects/train-schedule-optimisation/Resource.h
 

@@ -7,6 +7,8 @@ CMakeFiles/train_schedule_optimisation.dir/Train.cpp.o: ../Train.h
 
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../Instance.h
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../Requirement.h
+CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../Resource.h
+CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../Route.h
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../Train.h
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../include/rapidjson/allocators.h
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../include/rapidjson/document.h
@@ -34,4 +36,6 @@ CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../include/rapidjson/stre
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../include/rapidjson/stringbuffer.h
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../include/rapidjson/writer.h
 CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../main.cpp
+CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../route_path.h
+CMakeFiles/train_schedule_optimisation.dir/main.cpp.o: ../route_section.h
 

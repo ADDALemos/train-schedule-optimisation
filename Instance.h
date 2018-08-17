@@ -10,6 +10,8 @@ class Instance {
 public:
     int hash;
     std::string label;
+    std::string maxBandabweichung;
+
 
 };
 
