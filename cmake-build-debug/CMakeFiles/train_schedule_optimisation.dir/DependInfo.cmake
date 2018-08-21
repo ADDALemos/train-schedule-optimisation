@@ -11,6 +11,8 @@ set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "/Users/alexandrelemos/Applications/IBM/ILOG/CPLEX_Studio1271/cplex/include"
+  "/Users/alexandrelemos/Applications/IBM/ILOG/CPLEX_Studio1271/concert/include"
   )
 
 # Targets to which this target links.

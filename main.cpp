@@ -1,3 +1,4 @@
+
 #include "include/rapidjson/reader.h"
 #include <iostream>
 #include <fstream>
@@ -14,22 +15,58 @@
 #include "route_path.h"
 #include "route_section.h"
 
+#ifndef IL_STD
+#define IL_STD
+#endif
+#include <cstring>
+#include <ilcplex/ilocplex.h>
+ILOSTLBEGIN
+
+
 
 
 Instance readJSONFile();
 
 void outputJSONFile(Instance instance);
 
+void ILP(const Instance &instance);
+
 using namespace rapidjson;
 using namespace std;
-const char *name="02_a_little_less_dummy";
+const char *name="01_dummy";
+typedef IloArray<IloNumVarArray> NumVarMatrix;
 
 int main() {
+
+
     Instance instance= readJSONFile();
+
+    //compact graph
+    for (int i = 0; i < instance.route.size(); ++i) {
+
+    }
+    //ILP(instance);
+
+
     outputJSONFile(instance);
 
 
     return 0;
+}
+
+void ILP(const Instance &instance) {
+    IloEnv env;
+    IloModel model(env);
+    NumVarMatrix accept(env,instance.train.size());
+    for(int i=0; i< instance.train.size(); i++) {
+        accept[i] = IloNumVarArray(env, instance.route.size());
+        for(int j=0; j< instance.route.size(); j++) {
+            accept[i][j] = IloNumVar(env, 0.0, 1.0);
+
+        }
+    }
+
+    IloCplex cplex(model);
 }
 
 void outputJSONFile(Instance instance) {
@@ -111,9 +148,10 @@ Instance readJSONFile() {
     d.ParseStream(isw);
 
     Instance Instance;
+
     Instance.hash=d["hash"].GetInt();
     Instance.label=d["label"].GetString();
-
+    std::list<Train> tt;
 
     for (int i = 0; i < d["service_intentions"].GetArray().Size(); ++i) {
         Train train;
@@ -124,7 +162,12 @@ Instance readJSONFile() {
         for (int j = 0; j <d["service_intentions"].GetArray()[i]["section_requirements"].GetArray().Size() ; ++j) {
             list<Requirement> re;
             int id=-1,delay=-1;
-            string entry_ea="",exit_earliest="",type="",min_stopping_time="",marker="";
+            string entry_ea="",exit_earliest="",type="",min_stopping_time="",marker="",exit_latest="",entry_latest="";
+            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_latest"))
+                entry_latest=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_latest"].GetString();
+            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("exit_latest"))
+                exit_latest=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["exit_latest"].GetString();
+
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_earliest"))
                 entry_ea=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_earliest"].GetString();
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("exit_earliest"))
@@ -148,6 +191,7 @@ Instance readJSONFile() {
                                                 d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["min_connection_time"].GetString());
                 clist.push_back(c);
             }
+
             if(id!=-1) {
                 Requirement r = Requirement(id,
                                             marker,
@@ -155,17 +199,20 @@ Instance readJSONFile() {
                                             min_stopping_time,
                                             entry_ea,
                                             delay,
-                                            exit_earliest);
+                                            exit_earliest,entry_latest,exit_latest);
                 r.connections = clist;
-               // std::cout << r << std::endl;
+                std::cout << r << std::endl;
                 //r.toString();
                 re.push_back(r);
             }
         }
+        tt.push_front(train);
     }
-    Route r;
+    Instance.train=tt;
+    std::list<Route> rr;
    for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
-        r.id=d["routes"].GetArray()[m]["id"].GetInt();
+       Route r;
+       r.id=d["routes"].GetArray()[m]["id"].GetInt();
        std::list<route_path> rpl;
        route_path rp;
         for (int i = 0; i < d["routes"].GetArray()[m]["route_paths"].GetArray().Size(); ++i) {
@@ -180,6 +227,16 @@ Instance readJSONFile() {
                         temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString());
                     }
                     rs.route_alternative_marker_at_entry=temp;
+                }
+                if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("route_alternative_marker_at_exit")) {
+                    std::list<std::string> temp;
+                    for (int k = 0; k <
+                                    d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray().Size(); ++k) {
+                        temp.push_front(
+                                d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString());
+                    }
+
+                    rs.route_alternative_marker_at_exit = temp;
                 }
                 if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("section_marker")){
                     std::list<std::string> temp;
@@ -207,6 +264,7 @@ Instance readJSONFile() {
                     rs.penalty=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
                 rs.starting_point=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
                 rs.minimum_running_time=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
+                rs.minimum_running_time=rs.minimum_running_time.substr(2,2);
                 rs.ending_point=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["ending_point"].GetString();
 
 
@@ -217,7 +275,8 @@ Instance readJSONFile() {
         }
        rpl.push_front(rp);
        r.route_path=rpl;
-        
+
+       rr.push_front(r);
     }
 
     
@@ -228,6 +287,7 @@ Instance readJSONFile() {
         reso.push_front(resource);
 
     }
+    Instance.resource=reso;
     Instance.maxBandabweichung=d["parameters"].GetObject()["maxBandabweichung"].GetString();
 
     return Instance;

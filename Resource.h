@@ -5,11 +5,14 @@
 #ifndef TRAIN_SCHEDULE_OPTIMISATION_RESOURCE_H
 #define TRAIN_SCHEDULE_OPTIMISATION_RESOURCE_H
 
+#include <iostream>
+#include <string>
+
 
 class Resource {
 
 public:
-    Resource(std::string id, std::string release_time, bool following_allowed) : id(id), release_time(release_time),
+    Resource(std::string id, std::string release_time, bool following_allowed) : id(id), release_time(release_time.substr(2,2)),
                                                                                  following_allowed(following_allowed) {
     }
     Resource(std::string id, std::string occupation_direction) : id(id), occupation_direction(occupation_direction){

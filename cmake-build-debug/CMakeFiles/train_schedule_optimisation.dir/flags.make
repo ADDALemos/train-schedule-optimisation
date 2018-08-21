@@ -6,5 +6,5 @@ CXX_FLAGS = -g   -std=gnu++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = 
+CXX_INCLUDES = -isystem /Users/alexandrelemos/Applications/IBM/ILOG/CPLEX_Studio1271/cplex/include -isystem /Users/alexandrelemos/Applications/IBM/ILOG/CPLEX_Studio1271/concert/include 
 

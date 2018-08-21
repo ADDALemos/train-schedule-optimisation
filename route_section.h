@@ -14,11 +14,12 @@ class route_section {
 public:
     int sequence_number;
     std::list<std::string> route_alternative_marker_at_entry;
+    std::list<std::string> route_alternative_marker_at_exit;
     std::list<std::string> section_marke;
     std::list<Resource> resource_occupations;
     double penalty=0;
     std::string starting_point;
-    std::string minimum_running_time;
+    std::string minimum_running_time;//
     std::string ending_point;
 
 
