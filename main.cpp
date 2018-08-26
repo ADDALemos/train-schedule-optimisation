@@ -20,6 +20,8 @@
 #endif
 #include <cstring>
 #include <ilcplex/ilocplex.h>
+#include <vector>
+
 ILOSTLBEGIN
 
 
@@ -33,7 +35,7 @@ void ILP(const Instance &instance);
 
 using namespace rapidjson;
 using namespace std;
-const char *name="01_dummy";
+const char *name="sample_scenario";
 typedef IloArray<IloNumVarArray> NumVarMatrix;
 
 int main() {
@@ -41,10 +43,16 @@ int main() {
 
     Instance instance= readJSONFile();
 
-    //compact graph
-    for (int i = 0; i < instance.route.size(); ++i) {
+    /*compact graph
+   for (std::list<Route>::iterator it=instance.route.begin(); it != instance.route.end(); ++it)
+        for (std::list<route_path>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
+            for (std::list<route_section>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
 
-    }
+            }
+
+            }
+
+    }*/
     //ILP(instance);
 
 
@@ -139,7 +147,7 @@ void outputJSONFile(Instance instance) {
 }
 
 Instance readJSONFile() {
-    std::string local="../problem_instances/";
+    std::string local="/Volumes/MAC/train-schedule-optimisation-challenge-starter-kit-master/sample_files/";//"../problem_instances/";
     local.append(name);
     local.append(".json");
     ifstream ifs(local);
@@ -201,7 +209,7 @@ Instance readJSONFile() {
                                             delay,
                                             exit_earliest,entry_latest,exit_latest);
                 r.connections = clist;
-                std::cout << r << std::endl;
+              //  std::cout << r << std::endl;
                 //r.toString();
                 re.push_back(r);
             }
@@ -210,44 +218,50 @@ Instance readJSONFile() {
     }
     Instance.train=tt;
     std::list<Route> rr;
-   for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
+    std::vector<std::list<std::pair<route_section, route_section>>> Pairs;
+
+    for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
        Route r;
        r.id=d["routes"].GetArray()[m]["id"].GetInt();
        std::list<route_path> rpl;
-       route_path rp;
+       route_path rp;std::list<std::pair<route_section, route_section>> pairs;
+
         for (int i = 0; i < d["routes"].GetArray()[m]["route_paths"].GetArray().Size(); ++i) {
-            rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetString();
+            if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].IsInt())
+                rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetInt()+"";
+            else
+                rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetString();
             std::list<route_section> rsl;
-            route_section rs;
-            for (int j = 0; j < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size(); ++j) {
+            route_section rs, rs1;
+            for (int j = 0; j < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size(); j++) {
                 rs.sequence_number=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["sequence_number"].GetInt();
+                std::list<std::string> temp;
                 if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("route_alternative_marker_at_entry")) {
-                    std::list<std::string> temp;
                     for (int k = 0; k < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray().Size(); ++k) {
                         temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString());
                     }
-                    rs.route_alternative_marker_at_entry=temp;
                 }
+                rs.route_alternative_marker_at_entry=temp;
+                temp.clear();
                 if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("route_alternative_marker_at_exit")) {
-                    std::list<std::string> temp;
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray().Size(); ++k) {
                         temp.push_front(
                                 d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString());
                     }
 
-                    rs.route_alternative_marker_at_exit = temp;
                 }
+                rs.route_alternative_marker_at_exit = temp;
+                temp.clear();
                 if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("section_marker")){
-                    std::list<std::string> temp;
                     for (int k = 0; k < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray().Size(); ++k) {
                         temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString());
                     }
-                    rs.section_marke=temp;
                 }
+                rs.section_marke=temp;
                 if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("resource_occupations"))
                 {
-                    std::list<Resource> temp;
+                    std::list<Resource> tempR;
                     for (int k = 0; k < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray().Size(); ++k) {
                         Resource r;
                         if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray()[k]["occupation_direction"].IsString())
@@ -256,34 +270,78 @@ Instance readJSONFile() {
                         else
                             r=Resource(                        d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["resource_occupations"].GetArray()[k]["resource"].GetString());
 
-                        temp.push_front(r);
+                        tempR.push_front(r);
                     }
-                    rs.resource_occupations=temp;
+                    rs.resource_occupations=tempR;
+                } else{
+                    std::list<Resource> tempR;
+                    rs.resource_occupations = tempR;
                 }
                 if(!d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].IsNull())
                     rs.penalty=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
+                else
+                    rs.penalty=0;
                 rs.starting_point=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
                 rs.minimum_running_time=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
                 rs.minimum_running_time=rs.minimum_running_time.substr(2,2);
                 rs.ending_point=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["ending_point"].GetString();
+                if(j!=0) {
+                    std::pair<route_section, route_section> p(rs1, rs);
+                    pairs.push_front(p);
+                }
+                if(i!=0){
+                    if(j==0 || j==d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size()-1){
+                       // std::cout<<rs.sequence_number<<" c "<<*rs.route_alternative_marker_at_exit.begin()<<" "<<rp.route_section.size()<<std::endl;
+                        for (auto l= rpl.begin(); l != rpl.end(); ++l) {
+                            for (auto k = l->route_section.begin(); k != l->route_section.end(); ++k) {
+                                if (k->route_alternative_marker_at_entry.size() != 0 &&
+                                    rs.route_alternative_marker_at_exit.size() != 0) {
+                                    std::string a = *rs.route_alternative_marker_at_exit.begin();
+                                    if (a.compare(*k->route_alternative_marker_at_entry.begin()) == 0) {
+                                        std::pair<route_section, route_section> p(rs, *k);
+                                        pairs.push_front(p);
+                                       // std::cout << k->sequence_number << " " << rs.sequence_number << " A "
+                                         //       << *k->route_alternative_marker_at_entry.begin() << " " << a << std::endl;
 
-
+                                    }
+                                }
+                                if (k->route_alternative_marker_at_exit.size() != 0 &&
+                                    rs.route_alternative_marker_at_entry.size() != 0) {
+                                    std::string a = *rs.route_alternative_marker_at_entry.begin();
+                                    if (a.compare(*k->route_alternative_marker_at_exit.begin()) == 0) {
+//                                            std::cout<<k->sequence_number<<" "<<rs.sequence_number<<" "<<*k->route_alternative_marker_at_entry.begin()<<" "<<*rs.route_alternative_marker_at_exit.begin()<<std::endl;
+                                        std::pair<route_section, route_section> p(*k,rs);
+                                        pairs.push_front(p);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                rs1=rs;
+                rsl.push_front(rs1);
             }
-            rsl.push_front(rs);
+
             rp.route_section=rsl;
+            rpl.push_front(rp);
 
         }
-       rpl.push_front(rp);
+        Pairs.push_back(pairs);
        r.route_path=rpl;
 
        rr.push_front(r);
     }
+    for (int n = 0; n < 1; ++n) {
+        for (auto i = Pairs.at(n).begin(); i != Pairs.at(n).end() ; ++i) {
+            std::cout<<i->first.sequence_number<<" "<<i->second.sequence_number<<std::endl;
+        }
 
-    
+    }
+
     std::list<Resource> reso;
     for (int l = 0; l < d["resources"].GetArray().Size(); ++l) {
         Resource resource = Resource(d["resources"].GetArray()[l]["id"].GetString(),d["resources"].GetArray()[l]["release_time"].GetString(),d["resources"].GetArray()[l]["following_allowed"].GetBool());
-        std::cout<<resource<<std::endl;
+      //  std::cout<<resource<<std::endl;
         reso.push_front(resource);
 
     }

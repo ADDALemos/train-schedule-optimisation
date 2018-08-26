@@ -53,7 +53,7 @@ public:
                 const std::string &exit_earliest,const std::string &entry_latest,const std::string &exit_latest) : id(id),
                                                                                     section_marker(section_marker),
                                                                                     type(type), min_stopping_time(
-                    min_stopping_time.substr(2,2)), entry_earliest(entry_earliest), entry_delay_weight(entry_delay_weight),
+                    min_stopping_time/*.substr(2,2)*/), entry_earliest(entry_earliest), entry_delay_weight(entry_delay_weight),
                                                                                     exit_earliest(exit_earliest),entry_latest(entry_latest),exit_latest(exit_latest)
                                                                                      {
                                                                                          if(entry_earliest!=""){
