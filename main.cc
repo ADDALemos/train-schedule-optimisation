@@ -113,7 +113,7 @@ static MaxSAT *mxsolver;
 //Print Solver stats
 void printSolverStats(MaxSATFormula*maxsat_formula,double initial_time);
 
-
+int getVariableID(std::string varName,MaxSATFormula*maxsat_formula);
 
 static void SIGINT_exit(int signum) {
     mxsolver->printAnswer(_UNKNOWN_);
@@ -351,6 +351,13 @@ int main(int argc, char **argv) {
 
         Instance instance= readJSONFile(argv[1]);
 
+        for (int i = 0; i < instance.train.size() ; ++i) {
+            for (int j = 0; j < instance.route[instance.train[i].route].totalSeq; ++j) {
+                getVariableID("t_"+std::to_string(instance.train[i].id)+"_"+std::to_string(j),maxsat_formula);
+            }
+        }
+
+
         /*compact graph
        for (std::list<Route>::iterator it=instance.route.begin(); it != instance.route.end(); ++it)
             for (std::list<route_path>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
@@ -457,6 +464,17 @@ void printSolverStats(MaxSATFormula*maxsat_formula,double initial_time){
 
 }
 
+// Get the variable identifier corresponding to a given name. If the
+// variable does not exist, a new identifier is created.
+int getVariableID(std::string varName,MaxSATFormula*maxsat_formula) {
+    char *cstr = new char[varName.length() + 1];
+    strcpy(cstr, varName.c_str());
+    int id = maxsat_formula->varID(cstr);
+    if (id == var_Undef)
+        id = maxsat_formula->newVarName(cstr);
+    delete[] cstr;
+    return id;
+}
 
 
 void outputJSONFile(Instance instance) {
@@ -539,7 +557,7 @@ Instance readJSONFile(char* local) {
 
     Instance.hash=d["hash"].GetInt();
     Instance.label=d["label"].GetString();
-    std::list<Train> tt;
+    std::vector<Train> tt;
 
     for (int i = 0; i < d["service_intentions"].GetArray().Size(); ++i) {
         Train train;
@@ -594,13 +612,14 @@ Instance readJSONFile(char* local) {
                 re.push_back(r);
             }
         }
-        tt.push_front(train);
+        tt.push_back(train);
     }
     Instance.train=tt;
-    std::list<Route> rr;
+    std::map<int,Route> rr;
     std::vector<std::map<std::string,std::vector<std::pair<route_section, route_section>>>> Pairs;
 
     for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
+        int nSeq=0;
        Route r;
        r.id=d["routes"].GetArray()[m]["id"].GetInt();
        std::list<route_path> rpl;
@@ -614,6 +633,7 @@ Instance readJSONFile(char* local) {
             std::list<route_section> rsl;
             route_section rs, rs1;
             for (int j = 0; j < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size(); j++) {
+                nSeq++;
                 size++;
                 rs.sequence_number = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["sequence_number"].GetInt();
                 std::list<std::string> temp;
@@ -751,9 +771,11 @@ Instance readJSONFile(char* local) {
         }
         Pairs.push_back(pairs);
        r.route_path=rpl;
-
-       rr.push_front(r);
+        r.totalSeq=nSeq;
+        rr.insert(std::pair<int,Route>(r.id,r));
     }
+    Instance.route=rr;
+
     Instance.pair=Pairs;
     //printPairs(Pairs);
 

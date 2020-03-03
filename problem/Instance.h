@@ -17,8 +17,8 @@ public:
     int hash;
     std::string label;
     std::string maxBandabweichung;
-    std::list<Train> train;
-    std::list<Route> route;
+    std::vector<Train> train;
+    std::map<int,Route> route;
     std::list<Resource> resource;
 
 

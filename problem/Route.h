@@ -15,7 +15,8 @@ class Route {
 
 
 public:
-    std::string id;
+    int id;
+    int totalSeq;
     std::list<route_path> route_path;
 };
 
