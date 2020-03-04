@@ -11,8 +11,8 @@
 class Train {
 
 public:
-    int id;
-    int route;
+    std::string id;
+    std::string route;
     std::list<Requirement> t;
 };
 

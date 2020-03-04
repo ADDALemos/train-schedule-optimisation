@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < instance.train.size() ; ++i) {
             for (int j = 0; j < instance.route[instance.train[i].route].totalSeq; ++j) {
-                getVariableID("t_"+std::to_string(instance.train[i].id)+"_"+std::to_string(j),maxsat_formula);
+                getVariableID("t_"+instance.train[i].id+"_"+std::to_string(j),maxsat_formula);
             }
         }
 
@@ -561,13 +561,19 @@ Instance readJSONFile(char* local) {
 
     for (int i = 0; i < d["service_intentions"].GetArray().Size(); ++i) {
         Train train;
-        train.id=d["service_intentions"].GetArray()[i]["id"].GetInt();
-        train.route=d["service_intentions"].GetArray()[i]["route"].GetInt();
-        if(train.id!=train.route)
-            cerr << "ERR" << endl;
+        if(d["service_intentions"].GetArray()[i]["id"].IsInt())
+            train.id=std::to_string(d["service_intentions"].GetArray()[i]["id"].GetInt());
+        else
+            train.id=d["service_intentions"].GetArray()[i]["id"].GetString();
+
+        if(d["service_intentions"].GetArray()[i]["route"].IsInt())
+            train.route=std::to_string(d["service_intentions"].GetArray()[i]["route"].GetInt());
+        else
+            train.route=d["service_intentions"].GetArray()[i]["route"].GetString();
+
         for (int j = 0; j <d["service_intentions"].GetArray()[i]["section_requirements"].GetArray().Size() ; ++j) {
             list<Requirement> re;
-            int id=-1,delay=-1;
+            string id="",delay="";
             string entry_ea="",exit_earliest="",type="",min_stopping_time="",marker="",exit_latest="",entry_latest="";
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_latest"))
                 entry_latest=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_latest"].GetString();
@@ -578,27 +584,52 @@ Instance readJSONFile(char* local) {
                 entry_ea=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_earliest"].GetString();
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("exit_earliest"))
                 exit_earliest=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["exit_earliest"].GetString();
+
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("section_marker"))
                 marker=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["section_marker"].GetString();
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("type"))
                 type=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["type"].GetString();
+
+
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("min_stopping_time"))
                 min_stopping_time=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["min_stopping_time"].GetString();
-            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("sequence_number"))
-                id=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["sequence_number"].GetInt();
-            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_delay_weight"))
-                delay=d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_delay_weight"].GetInt();
+            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("sequence_number")){
+               if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["sequence_number"].IsInt())
+                   id=std::to_string(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["sequence_number"].GetInt());
+                else
+                   id = d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["sequence_number"].GetString();
 
-            list<connection> clist;
-            if(!d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].IsNull())
-            for (int k = 0; k < d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray().Size(); ++k) {
-                connection c = connection(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["onto_service_intention"].GetInt(),
-                                                d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["onto_section_marker"].GetString(),
-                                                d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["min_connection_time"].GetString());
-                clist.push_back(c);
+
             }
 
-            if(id!=-1) {
+            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_delay_weight")) {
+                if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_delay_weight"].IsInt())
+                    delay=std::to_string(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_delay_weight"].GetInt());
+                else
+                    delay=std::to_string(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["entry_delay_weight"].GetFloat());
+
+            }
+
+            list<connection> clist;
+
+            if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("connections")){
+                if(!d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].IsNull()){
+                    for (int k = 0; k < d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray().Size(); ++k) {
+                        if(!d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k].IsNull()) {
+                            connection c = connection(
+                                    d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["onto_service_intention"].GetInt(),
+                                    d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["onto_section_marker"].GetString(),
+                                    d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j]["connections"].GetArray()[k]["min_connection_time"].GetString());
+                            clist.push_back(c);
+                        }
+
+                    }
+                }
+            }
+
+
+
+            if(id.compare("")!=0) {
                 Requirement r = Requirement(id,
                                             marker,
                                             type,
@@ -611,23 +642,33 @@ Instance readJSONFile(char* local) {
                 //r.toString();
                 re.push_back(r);
             }
+
+
         }
+
+
         tt.push_back(train);
     }
+
+
     Instance.train=tt;
-    std::map<int,Route> rr;
+    std::map<std::string,Route> rr;
     std::vector<std::map<std::string,std::vector<std::pair<route_section, route_section>>>> Pairs;
 
     for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
         int nSeq=0;
        Route r;
-       r.id=d["routes"].GetArray()[m]["id"].GetInt();
+        if(d["routes"].GetArray()[m]["id"].IsInt())
+            r.id=std::to_string(d["routes"].GetArray()[m]["id"].GetInt());
+
+        else
+            r.id=d["routes"].GetArray()[m]["id"].GetString();
        std::list<route_path> rpl;
        route_path rp;std::map<std::string,std::vector<std::pair<route_section, route_section>>> pairs;
 
         for (int i = 0; i < d["routes"].GetArray()[m]["route_paths"].GetArray().Size(); ++i) {
             if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].IsInt())
-                rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetInt()+"";
+                rp.id=std::to_string(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetInt());
             else
                 rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetString();
             std::list<route_section> rsl;
@@ -641,29 +682,28 @@ Instance readJSONFile(char* local) {
                         "route_alternative_marker_at_entry")) {
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray().Size(); ++k) {
-                        temp.push_front(
-                                d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString());
+                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString());
                     }
                 }
+
                 rs.route_alternative_marker_at_entry = temp;
                 temp.clear();
                 if (d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember(
                         "route_alternative_marker_at_exit")) {
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray().Size(); ++k) {
-                        temp.push_front(
-                                d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString());
+                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString());
                     }
 
                 }
+
                 rs.route_alternative_marker_at_exit = temp;
                 temp.clear();
                 if (d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember(
                         "section_marker")) {
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray().Size(); ++k) {
-                        temp.push_front(
-                                d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString());
+                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString());
                     }
                 }
                 rs.section_marke = temp;
@@ -688,10 +728,14 @@ Instance readJSONFile(char* local) {
                     std::list<Resource> tempR;
                     rs.resource_occupations = tempR;
                 }
-                if (!d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].IsNull())
-                    rs.penalty = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
-                else
+                if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("penalty")) {
+                    if (!d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].IsNull())
+                        rs.penalty = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
+                    else
+                        rs.penalty = 0;
+                } else
                     rs.penalty = 0;
+
                 rs.starting_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
                 rs.minimum_running_time = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
                 rs.minimum_running_time = rs.minimum_running_time.substr(2, 2);
@@ -770,9 +814,9 @@ Instance readJSONFile(char* local) {
 
         }
         Pairs.push_back(pairs);
-       r.route_path=rpl;
+        r.route_path=rpl;
         r.totalSeq=nSeq;
-        rr.insert(std::pair<int,Route>(r.id,r));
+        rr.insert(std::pair<std::string,Route>(r.id,r));
     }
     Instance.route=rr;
 
@@ -781,9 +825,9 @@ Instance readJSONFile(char* local) {
 
     std::list<Resource> reso;
     for (int l = 0; l < d["resources"].GetArray().Size(); ++l) {
-        Resource resource = Resource(d["resources"].GetArray()[l]["id"].GetString(),d["resources"].GetArray()[l]["release_time"].GetString(),d["resources"].GetArray()[l]["following_allowed"].GetBool());
+      Resource resource = Resource(d["resources"].GetArray()[l]["id"].GetString(),d["resources"].GetArray()[l]["release_time"].GetString(),d["resources"].GetArray()[l]["following_allowed"].GetBool());
       //  std::cout<<resource<<std::endl;
-        reso.push_front(resource);
+      reso.push_front(resource);
 
     }
     Instance.resource=reso;

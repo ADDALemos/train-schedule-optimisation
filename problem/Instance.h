@@ -18,7 +18,7 @@ public:
     std::string label;
     std::string maxBandabweichung;
     std::vector<Train> train;
-    std::map<int,Route> route;
+    std::map<std::string,Route> route;
     std::list<Resource> resource;
 
 

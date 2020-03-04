@@ -44,12 +44,12 @@ public:
 class Requirement {
 public:
 
-    int id;
+    std::string id;
     std::string section_marker;
     std::string  type;
     std::string min_stopping_time;
-    Requirement(int id, const std::string &section_marker,  const std::string & type, const std::string &min_stopping_time,
-                const std::string &entry_earliest, int entry_delay_weight,
+    Requirement(std::string id, const std::string &section_marker,  const std::string & type, const std::string &min_stopping_time,
+                const std::string &entry_earliest, std::string entry_delay_weight,
                 const std::string &exit_earliest,const std::string &entry_latest,const std::string &exit_latest) : id(id),
                                                                                     section_marker(section_marker),
                                                                                     type(type), min_stopping_time(
@@ -83,7 +83,7 @@ public:
 
                                                                                      }
     std::string entry_earliest;
-    int entry_delay_weight;
+    std::string entry_delay_weight;
     std::string exit_earliest;
     std::string  exit_latest;
     std::string  entry_latest;
