@@ -5,7 +5,7 @@
 #ifndef TRAIN_SCHEDULE_OPTIMISATION_TRAIN_H
 #define TRAIN_SCHEDULE_OPTIMISATION_TRAIN_H
 #include "Requirement.h"
-#include <list>
+#include <vector>
 
 
 class Train {
@@ -13,7 +13,7 @@ class Train {
 public:
     std::string id;
     std::string route;
-    std::list<Requirement> t;
+    std::vector<Requirement*> t;
 };
 
 

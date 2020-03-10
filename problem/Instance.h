@@ -11,7 +11,6 @@
 #include "Train.h"
 #include "Route.h"
 
-using namespace std;
 class Instance {
 public:
     int hash;
@@ -20,9 +19,12 @@ public:
     std::vector<Train> train;
     std::map<std::string,Route> route;
     std::list<Resource> resource;
+    std::map<std::string,std::vector<route_section*>> entryMap;
+    std::map<std::string,std::vector<route_section*>> exitMap;
+    std::map<std::string,std::vector<route_section*>> markerMap;
+    std::map<std::string, std::map<int,std::vector<route_section*>>> end;
 
 
-    vector<map<string,vector<pair<route_section, route_section>>>> pair;
 };
 
 

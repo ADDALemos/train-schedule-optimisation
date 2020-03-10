@@ -127,8 +127,6 @@ Instance readJSONFile(char *);
 void outputJSONFile(Instance instance);
 
 
-void printPairs(
-        vector<list<pair<route_section, route_section>, allocator<pair<route_section, route_section>>>, allocator<list<pair<route_section, route_section>, allocator<pair<route_section, route_section>>>>> &Pairs);
 
 using namespace rapidjson;
 using namespace std;
@@ -351,10 +349,81 @@ int main(int argc, char **argv) {
 
         Instance instance= readJSONFile(argv[1]);
 
-        for (int i = 0; i < instance.train.size() ; ++i) {
+        /*for (int i = 0; i < instance.train.size() ; ++i) {
             for (int j = 0; j < instance.route[instance.train[i].route].totalSeq; ++j) {
                 getVariableID("t_"+instance.train[i].id+"_"+std::to_string(j),maxsat_formula);
             }
+        }*/
+        std::map<std::string, std::map<int,std::vector<route_section*>>>::iterator it = instance.end.begin();;
+
+        while (it != instance.end.end()) {
+            std::map<int,std::vector<route_section*>>::iterator it1 = it->second.begin();
+            while (it1 != it->second.end()) {
+                if(it1->second[0]->route_alternative_marker_at_entry.size()==0){
+                    vec<Lit> lit;
+                    lit.push(~mkLit(getVariableID("t_"+it->first+"_"+std::to_string(it1->first),maxsat_formula)));
+                    printf("~%s ",("t_"+it->first+"_"+std::to_string(it1->first)).c_str());
+                    for (int i = 1; i < it1->second.size(); ++i) {
+                        lit.push(mkLit(getVariableID("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number),maxsat_formula)));
+                        printf("%s ",("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number)).c_str());
+
+                    }
+                    printf("\n");
+                    maxsat_formula->addHardClause(lit);
+                    lit.clear();
+                }
+                it1++;
+
+            }
+            it++;
+
+        }
+        printf("splits\n");
+        std::string delimiter = "_";
+        std::map<std::string,std::vector<route_section*>> ::iterator it2 = instance.entryMap.begin();;
+
+        while (it2 != instance.entryMap.end()) {
+            for(int y=0; y<it2->second.size();y++) {
+                vec <Lit> lit;
+                std::string rid = it2->first.substr(it2->first.find(delimiter) + 1, it2->first.size());
+
+                lit.push(~mkLit(getVariableID("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number),
+                                              maxsat_formula)));
+                printf("~%s ", ("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number)).c_str());
+                for (int i = 0; i < instance.exitMap[it2->first].size(); ++i) {
+                    lit.push(mkLit(getVariableID(
+                            "t_" + rid + "_" + std::to_string(instance.exitMap[it2->first][i]->sequence_number),
+                            maxsat_formula)));
+                    printf("%s ", ("t_" + rid + "_" +
+                                   std::to_string(instance.exitMap[it2->first][i]->sequence_number)).c_str());
+
+                }
+                printf("\n");
+                maxsat_formula->addHardClause(lit);
+                lit.clear();
+            }
+            it2++;
+
+
+
+        }
+
+        printf("musts\n");
+        for (int j = 0; j < instance.train.size(); ++j) {
+
+            for(Requirement *r: instance.train[j].t){
+
+                vec<Lit> lit;
+                    for(int k=0; k<instance.markerMap[instance.train[j].id+"_"+r->section_marker].size();k++){
+                        lit.push(mkLit(getVariableID(
+                                "t_" + instance.train[j].id + "_" + std::to_string(instance.markerMap[instance.train[j].id+"_"+r->section_marker][k]->sequence_number),maxsat_formula)));
+                    }
+
+                    maxsat_formula->addHardClause(lit);
+                    lit.clear();
+
+            }
+
         }
 
 
@@ -370,7 +439,8 @@ int main(int argc, char **argv) {
         }*/
 
 
-        if (cpu_lim != 0) ;
+        if (cpu_lim != 0)
+            ;
 
 
 
@@ -572,7 +642,7 @@ Instance readJSONFile(char* local) {
             train.route=d["service_intentions"].GetArray()[i]["route"].GetString();
 
         for (int j = 0; j <d["service_intentions"].GetArray()[i]["section_requirements"].GetArray().Size() ; ++j) {
-            list<Requirement> re;
+            std::vector<Requirement*> re;
             string id="",delay="";
             string entry_ea="",exit_earliest="",type="",min_stopping_time="",marker="",exit_latest="",entry_latest="";
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_latest"))
@@ -630,18 +700,19 @@ Instance readJSONFile(char* local) {
 
 
             if(id.compare("")!=0) {
-                Requirement r = Requirement(id,
+                Requirement *r = new Requirement(id,
                                             marker,
                                             type,
                                             min_stopping_time,
                                             entry_ea,
                                             delay,
                                             exit_earliest,entry_latest,exit_latest);
-                r.connections = clist;
+                r->connections = clist;
                 //std::cout << r << std::endl;
                 //r.toString();
                 re.push_back(r);
             }
+            train.t=re;
 
 
         }
@@ -653,7 +724,12 @@ Instance readJSONFile(char* local) {
 
     Instance.train=tt;
     std::map<std::string,Route> rr;
-    std::vector<std::map<std::string,std::vector<std::pair<route_section, route_section>>>> Pairs;
+    std::map<std::string, std::map<int,std::vector<route_section*>>> end1;
+    std::map<std::string,std::vector<route_section*>> entryMap;
+    std::map<std::string,std::vector<route_section*>> exitMap;
+    std::map<std::string,std::vector<route_section*>> markerMap;
+
+
 
     for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
         int nSeq=0;
@@ -663,50 +739,84 @@ Instance readJSONFile(char* local) {
 
         else
             r.id=d["routes"].GetArray()[m]["id"].GetString();
-       std::list<route_path> rpl;
-       route_path rp;std::map<std::string,std::vector<std::pair<route_section, route_section>>> pairs;
+        std::list<route_path> rpl;
+        route_path rp;
 
         for (int i = 0; i < d["routes"].GetArray()[m]["route_paths"].GetArray().Size(); ++i) {
             if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].IsInt())
                 rp.id=std::to_string(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetInt());
             else
                 rp.id=d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["id"].GetString();
-            std::list<route_section> rsl;
-            route_section rs, rs1;
+            std::list<route_section*> rsl;
+            route_section *rs= new route_section();
+            route_section *rs1= new route_section();
+
+
             for (int j = 0; j < d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size(); j++) {
                 nSeq++;
                 size++;
-                rs.sequence_number = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["sequence_number"].GetInt();
+                rs->sequence_number = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["sequence_number"].GetInt();
                 std::list<std::string> temp;
                 if (d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember(
                         "route_alternative_marker_at_entry")) {
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray().Size(); ++k) {
-                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString());
+                        std::string e =d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString();
+                        temp.push_front(e);
+                    std::string c = e +"_"+ r.id;
+                        //printf("Entry: %s s %d\n",c.c_str(),rs->sequence_number);
+                        if(entryMap.find(c)!=entryMap.end()){
+                            entryMap[c].push_back(rs);
+                        } else {
+                            std::vector<route_section*> rsV;
+                            rsV.push_back(rs);
+                            entryMap.insert(std::pair<std::string,std::vector<route_section*>>(c,rsV));
+                        }
                     }
                 }
 
-                rs.route_alternative_marker_at_entry = temp;
+                rs->route_alternative_marker_at_entry = temp;
                 temp.clear();
                 if (d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember(
                         "route_alternative_marker_at_exit")) {
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray().Size(); ++k) {
-                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString());
+                        std::string e =d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString();
+                        temp.push_front(e);
+                        std::string c = e +"_"+ r.id;
+                        //printf("Exit: %s s %d\n",c.c_str(),rs->sequence_number);
+                        if(exitMap.find(c)!=exitMap.end()){
+                            exitMap[c].push_back(rs);
+                        } else {
+                            std::vector<route_section*> rsV;
+                            rsV.push_back(rs);
+                            exitMap.insert(std::pair<std::string,std::vector<route_section*>>(c,rsV));
+                        }
                     }
 
                 }
-
-                rs.route_alternative_marker_at_exit = temp;
+                rs->route_alternative_marker_at_exit = temp;
                 temp.clear();
                 if (d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember(
                         "section_marker")) {
                     for (int k = 0; k <
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray().Size(); ++k) {
-                        temp.push_front(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString());
+                        std::string e = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString();
+                        temp.push_front(e);
+                        std::string c = r.id +"_"+e;
+                        //printf("Exit: %s s %d\n",c.c_str(),rs->sequence_number);
+                        if(markerMap.find(c)!=exitMap.end()){
+                            markerMap[c].push_back(rs);
+                        } else {
+                            std::vector<route_section*> rsV;
+                            rsV.push_back(rs);
+                            markerMap.insert(std::pair<std::string,std::vector<route_section*>>(c,rsV));
+                        }
+
+
                     }
                 }
-                rs.section_marke = temp;
+                rs->section_marke = temp;
                 if (d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember(
                         "resource_occupations")) {
                     std::list<Resource> tempR;
@@ -723,105 +833,67 @@ Instance readJSONFile(char* local) {
 
                         tempR.push_front(r);
                     }
-                    rs.resource_occupations = tempR;
+                    rs->resource_occupations = tempR;
                 } else {
                     std::list<Resource> tempR;
-                    rs.resource_occupations = tempR;
+                    rs->resource_occupations = tempR;
                 }
                 if(d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j].HasMember("penalty")) {
                     if (!d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].IsNull())
-                        rs.penalty = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
+                        rs->penalty = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["penalty"].GetDouble();
                     else
-                        rs.penalty = 0;
+                        rs->penalty = 0;
                 } else
-                    rs.penalty = 0;
+                    rs->penalty = 0;
 
-                rs.starting_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
-                rs.minimum_running_time = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
-                rs.minimum_running_time = rs.minimum_running_time.substr(2, 2);
-                rs.ending_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["ending_point"].GetString();
-                if (j != 0) {
-                    std::pair<route_section, route_section> p(rs1, rs);
-                    std::string name(rp.id + std::to_string(rs.sequence_number));
-                    auto it = pairs.find(name);
-                    if (it != pairs.end())
-                        it->second.push_back(p);
-                    else {
-                        std::vector<std::pair<route_section, route_section>> v;
-                        v.push_back(p);
-                        pairs.insert(
-                                std::pair<std::string, std::vector<std::pair<route_section, route_section>>>(
-                                        rp.id + std::to_string(rs.sequence_number), v));
-                    }
-                }
-
-
-
-                if(i!=0){
-                    if(j==0 || j==d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"].GetArray().Size()-1){
-                       // std::cout<<rs.sequence_number<<" c "<<*rs.route_alternative_marker_at_exit.begin()<<" "<<rp.route_section.size()<<std::endl;
-                        for (auto l= rpl.begin(); l != rpl.end(); ++l) {
-                            for (auto k = l->route_section.begin(); k != l->route_section.end(); ++k) {
-                                if (k->route_alternative_marker_at_entry.size() != 0 &&
-                                    rs.route_alternative_marker_at_exit.size() != 0) {
-                                    std::string a = *rs.route_alternative_marker_at_exit.begin();
-                                    if (a.compare(*k->route_alternative_marker_at_entry.begin()) == 0) {
-                                        std::pair<route_section, route_section> p(rs, *k);
-                                        auto it = pairs.find(rp.id + std::to_string(k->sequence_number));
-                                        if (it != pairs.end())
-                                            it->second.push_back(p);
-                                        else {
-                                            std::vector<std::pair<route_section, route_section>> v;
-                                            v.push_back(p);
-                                            pairs.insert(
-                                                    std::pair<std::string, std::vector<std::pair<route_section, route_section>>>(
-                                                            rp.id + std::to_string(k->sequence_number),
-                                                            std::vector<std::pair<route_section, route_section> >(v)));
-                                        }                                       // std::cout << k->sequence_number << " " << rs.sequence_number << " A "
-                                        //       << *k->route_alternative_marker_at_entry.begin() << " " << a << std::endl;
-
-                                    }
-                                }
-                                if (k->route_alternative_marker_at_exit.size() != 0 &&
-                                    rs.route_alternative_marker_at_entry.size() != 0) {
-                                    std::string a = *rs.route_alternative_marker_at_entry.begin();
-                                    if (a.compare(*k->route_alternative_marker_at_exit.begin()) == 0) {
-//                                            std::cout<<k->sequence_number<<" "<<rs.sequence_number<<" "<<*k->route_alternative_marker_at_entry.begin()<<" "<<*rs.route_alternative_marker_at_exit.begin()<<std::endl;
-                                        std::pair<route_section, route_section> p(*k,rs);
-                                        auto it = pairs.find(rp.id + std::to_string(rs.sequence_number));
-                                        if (it != pairs.end())
-                                            it->second.push_back(p);
-                                        else {
-                                            std::vector<std::pair<route_section, route_section>> v;
-                                            v.push_back(p);
-                                            pairs.insert(
-                                                    std::pair<std::string, std::vector<std::pair<route_section, route_section>>>(
-                                                            rp.id + std::to_string(rs.sequence_number),
-                                                            std::vector<std::pair<route_section, route_section> >(v)));
-                                        }
-                                    }
-                                }
-                            }
+                rs->starting_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
+                rs->minimum_running_time = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
+                rs->minimum_running_time = rs->minimum_running_time.substr(2, 2);
+                rs->ending_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["ending_point"].GetString();
+                if (j > 0) {
+                    //printf("train: %s origin %d dest %d\n",r.id.c_str(),rs1->sequence_number,rs->sequence_number);
+                    auto it = end1.find(r.id);
+                    if (it == end1.end()) {
+                        std::map<int, std::vector < route_section * >> mapEnd;
+                        std::vector<route_section*> t;
+                        t.push_back(rs);
+                        t.push_back(rs1);
+                        mapEnd.insert(std::pair<int, std::vector < route_section * >>(rs->sequence_number,t));
+                        end1.insert(std::pair < std::string, std::map < int,
+                                    std::vector < route_section * >> > (r.id, mapEnd));
+                    } else {
+                        auto it1 = it->second.find(rs->sequence_number);
+                        if (it1 == it->second.end()) {
+                            std::vector<route_section*> t;
+                            t.push_back(rs);
+                            t.push_back(rs1);
+                            it->second.insert(std::pair<int, std::vector < route_section * >>(rs->sequence_number,t));
+                        } else {
+                            it1->second.push_back(rs1);
                         }
                     }
                 }
+
                 rs1=rs;
                 rsl.push_front(rs1);
+                rs= new route_section();
+
+
             }
 
             rp.route_section=rsl;
             rpl.push_front(rp);
 
         }
-        Pairs.push_back(pairs);
         r.route_path=rpl;
         r.totalSeq=nSeq;
         rr.insert(std::pair<std::string,Route>(r.id,r));
     }
     Instance.route=rr;
-
-    Instance.pair=Pairs;
-    //printPairs(Pairs);
+    Instance.exitMap=exitMap;
+    Instance.entryMap=entryMap;
+    Instance.markerMap=markerMap;
+    Instance.end=end1;
 
     std::list<Resource> reso;
     for (int l = 0; l < d["resources"].GetArray().Size(); ++l) {
@@ -836,12 +908,3 @@ Instance readJSONFile(char* local) {
     return Instance;
 }
 
-void printPairs(
-        vector<list<pair<route_section, route_section>, allocator<pair<route_section, route_section>>>, allocator<list<pair<route_section, route_section>, allocator<pair<route_section, route_section>>>>> &Pairs) {
-    for (int n = 0; n < Pairs.size(); ++n) {
-        for (auto i = Pairs.at(n).begin(); i != Pairs.at(n).end() ; ++i) {
-            cout << i->first.sequence_number << " " << i->second.sequence_number << endl;
-        }
-
-    }
-}

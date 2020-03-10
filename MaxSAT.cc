@@ -379,7 +379,7 @@ void MaxSAT::printModel() {
       indexMap::const_iterator iter = maxsat_formula->getIndexToName().find(i);
       if (iter != maxsat_formula->getIndexToName().end()) {
         if (model[i] == l_False)
-          printf("-");
+            continue;//printf("-");
         printf("%s ", iter->second.c_str());
       }
     }
@@ -442,12 +442,12 @@ void MaxSAT::printAnswer(int type) {
   switch (type) {
   case _SATISFIABLE_:
     printf("s SATISFIABLE\n");
-    if (print_model)
+    //if (print_model)
       printModel();
     break;
   case _OPTIMUM_:
     printf("s OPTIMUM FOUND\n");
-    if (print_model)
+    //if (print_model)
       printModel();
     break;
   case _UNSATISFIABLE_:

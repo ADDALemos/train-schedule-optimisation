@@ -12,7 +12,7 @@
 class route_path {
 public:
     std::string id;
-    std::list<route_section> route_section;
+    std::list<route_section*> route_section;
 
 };
 
