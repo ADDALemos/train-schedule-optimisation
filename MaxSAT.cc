@@ -37,7 +37,7 @@ using namespace openwbo;
  //
  ************************************************************************************************/
 
-void MaxSAT::search() {
+StatusCode MaxSAT::search(){      // MaxSAT search.
   printf("Error: Invalid MaxSAT algoritm.\n");
   exit(_ERROR_);
 }
@@ -62,6 +62,18 @@ Solver *MaxSAT::newSATSolver() {
 #endif
 
   return (Solver *)S;
+}
+
+// Makes sure the underlying SAT solver has the given amount of variables
+// reserved.
+void MaxSAT::reserveSATVariables(Solver *S, unsigned maxVariable) {
+#ifdef SAT_HAS_RESERVATION
+  #ifdef SIMP
+  ((NSPACE::SimpSolver *)S)->reserveVars(maxVariable);
+#else
+  S->reserveVars(maxVariable);
+#endif
+#endif
 }
 
 // Creates a new variable in the SAT solver.
@@ -271,6 +283,10 @@ bool MaxSAT::isBMO(bool cache) {
  // Utils for printing
  //
  ************************************************************************************************/
+void MaxSAT::printBound(int64_t bound)
+{
+  printf("o %" PRId64 "\n", bound);
+}
 
 // Prints information regarding the AMO encoding.
 void MaxSAT::print_AMO_configuration(int encoding) {
@@ -374,7 +390,7 @@ void MaxSAT::printModel() {
 
   if (maxsat_formula->getFormat() == _FORMAT_PB_) {
 
-    printf("v ");
+    printf("v");
     for (int i = 0; i < model.size(); i++) {
       indexMap::const_iterator iter = maxsat_formula->getIndexToName().find(i);
       if (iter != maxsat_formula->getIndexToName().end()) {

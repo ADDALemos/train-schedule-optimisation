@@ -68,7 +68,7 @@ public:
       delete solver;
   }
 
-  void search();
+    StatusCode search();
 
   void initializeCluster();
 
@@ -99,8 +99,8 @@ protected:
   // Other
   void initRelaxation(); // Relaxes soft clauses.
 
-  void unweighted();
-  void weighted();
+  StatusCode unweighted();
+  StatusCode weighted();
 
   Solver *solver;  // SAT Solver used as a black box.
   Encoder encoder; // Interface for the encoder of constraints to CNF.

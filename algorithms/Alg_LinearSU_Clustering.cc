@@ -195,8 +195,7 @@ uint64_t LinearSUClustering::computeOriginalCost(vec<lbool> &currentModel,
   |    * 'nbCores' is updated.
   |
   |________________________________________________________________________________________________@*/
-void LinearSUClustering::bmoSearch(){
-
+StatusCode LinearSUClustering::bmoSearch() throw() {
   assert(orderWeights.size() > 0);
   lbool res = l_True;
 
@@ -261,7 +260,7 @@ void LinearSUClustering::bmoSearch(){
 
   int current_function_id = 0;
   vec<Lit> assumptions;
-  //printf("c objective function %d out of %d\n",current_function_id,orderWeights.size());
+  printf("c objective function %d out of %d\n",current_function_id,orderWeights.size());
 
   bool repair = false;
   int repair_lvl = 0;
@@ -281,8 +280,7 @@ void LinearSUClustering::bmoSearch(){
         uint64_t newCost = computeCostModel(solver->model, orderWeights[current_function_id])/orderWeights[current_function_id];
         uint64_t originalCost = computeOriginalCost(solver->model);
   //printf("c objective function %d = o %" PRId64 " \n",current_function_id,newCost);
-        if(best_cost > originalCost) {			
-          saveModel(solver->model);
+        if(best_cost > originalCost) {
           solver->model.copyTo(best_model);
           best_cost = originalCost;
           printf("o %" PRId64 " \n", originalCost);                    
@@ -306,7 +304,8 @@ void LinearSUClustering::bmoSearch(){
                 encodingAssumptions.push(~functions[current_function_id][i]);
               }
             } else {
-        //printf("c creating encoder with id = %d and value = %d\n",current_function_id,rhs[current_function_id]);
+              if(rhs[current_function_id]>0){
+        printf("c1 creating encoder with id = %d and value = %d\n",current_function_id,rhs[current_function_id]);
               encoders[current_function_id]->buildCardinality(solver, functions[current_function_id], newCost-1);
               if (encoders[current_function_id]->hasCardEncoding()){
                 encoder_created[current_function_id] = true;
@@ -316,6 +315,7 @@ void LinearSUClustering::bmoSearch(){
                 functions_to_assumptions[current_function_id].clear();
                 functions_to_assumptions[current_function_id].push(encodingAssumptions[0]);
               }
+            }
             }
           } else {
       //  printf("c updating the cost to %llu\n",newCost-1);
@@ -344,7 +344,6 @@ void LinearSUClustering::bmoSearch(){
   //printf("c o %" PRId64 " \n", originalCost);
   //printf("repair_cost = %llu\n",repair_cost);
         if(best_cost > originalCost) {
-          saveModel(solver->model);
           solver->model.copyTo(best_model);
           best_cost = originalCost;
           repair_cost = best_cost - 1;
@@ -388,7 +387,7 @@ void LinearSUClustering::bmoSearch(){
     //printf("size if the same!\n");
               }
             } else {
-        //printf("ERROR\n");
+        printf("ERROR %d\n",ub_rhs[i]);
               encoders[i]->buildCardinality(solver, functions[i], ub_rhs[i]);
               if (encoders[i]->hasCardEncoding()){
                 encoder_created[i] = true;
@@ -420,12 +419,12 @@ void LinearSUClustering::bmoSearch(){
 
         if (!complete){
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
         // ignore the complete part for now!
         if(repair){
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
 
         repair = true;
@@ -442,7 +441,7 @@ void LinearSUClustering::bmoSearch(){
 
         if (repair_cost == 0){
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
 
         if (all_weights){
@@ -476,7 +475,7 @@ void LinearSUClustering::bmoSearch(){
                 functions_to_assumptions[i].push(encodingAssumptions[0]);
               }
             } else {
-        //printf("ERROR\n");
+        printf("ERROR %d\n",ub_rhs[i]);
               encoders[i]->buildCardinality(solver, functions[i], ub_rhs[i]);
               if (encoders[i]->hasCardEncoding()){
                 encoder_created[i] = true;
@@ -530,38 +529,43 @@ void LinearSUClustering::bmoSearch(){
         goto sat;
 
       } else {
-  // go to the next function
-  //rhs[current_function_id];
+        // go to the next function
+        //rhs[current_function_id];
         encodingAssumptions.clear();
         functions_to_assumptions[current_function_id].clear();
-  //printf("c encoding created %d\n",encoder_created[current_function_id]);
-  //printf("c objective function %d = best o %llu\n",current_function_id,rhs[current_function_id]);
-        if (rhs[current_function_id] == 0){
-          for (int i = 0; i < functions[current_function_id].size(); i++){
+        //printf("c encoding created %d\n",encoder_created[current_function_id]);
+        //printf("c objective function %d = best o %llu\n",current_function_id,rhs[current_function_id]);
+        if (rhs[current_function_id] == 0) {
+          for (int i = 0; i < functions[current_function_id].size(); i++) {
             functions_to_assumptions[current_function_id].push(~functions[current_function_id][i]);
             encodingAssumptions.push(~functions[current_function_id][i]);
           }
-        } else if (encoder_created[current_function_id]){
-    //printf("current function =%d\n",current_function_id);
-    //    printf("c updating the cardinality to %llu\n",rhs[current_function_id]);
-    //  printf("c size of function %d\n",functions[current_function_id].size());
-          if (functions[current_function_id].size() != rhs[current_function_id]){
-            encoders[current_function_id]->incUpdateCardinality(solver, functions[current_function_id], rhs[current_function_id], encodingAssumptions);
+        } else if (encoder_created[current_function_id]) {
+          //printf("current function =%d\n",current_function_id);
+          //    printf("c updating the cardinality to %llu\n",rhs[current_function_id]);
+          //  printf("c size of function %d\n",functions[current_function_id].size());
+          if (functions[current_function_id].size() != rhs[current_function_id]) {
+            encoders[current_function_id]->incUpdateCardinality(solver, functions[current_function_id],
+                                                                rhs[current_function_id], encodingAssumptions);
             assert(encodingAssumptions.size() == 1);
             functions_to_assumptions[current_function_id].push(encodingAssumptions[0]);
           }
         } else {
-    //  printf("c creating encoder with id = %d and value = %d\n",current_function_id,rhs[current_function_id]);
-          if (functions[current_function_id].size() != rhs[current_function_id]){
-            encoders[current_function_id]->buildCardinality(solver, functions[current_function_id], rhs[current_function_id]);
-            if (encoders[current_function_id]->hasCardEncoding()){
-              encoders[current_function_id]->incUpdateCardinality(solver, functions[current_function_id], rhs[current_function_id], encodingAssumptions);
+          if (rhs[current_function_id] =! -1) {
+            printf("c2 creating encoder with id = %d and value = %d\n", current_function_id, rhs[current_function_id]);
+          if (functions[current_function_id].size() != rhs[current_function_id]) {
+            encoders[current_function_id]->buildCardinality(solver, functions[current_function_id],
+                                                            rhs[current_function_id]);
+            if (encoders[current_function_id]->hasCardEncoding()) {
+              encoders[current_function_id]->incUpdateCardinality(solver, functions[current_function_id],
+                                                                  rhs[current_function_id], encodingAssumptions);
               assert(encodingAssumptions.size() == 1);
               functions_to_assumptions[current_function_id].push(encodingAssumptions[0]);
               encoder_created[current_function_id] = true;
             }
           }
         }
+      }
 
         assumptions.clear();
         for (int i = 0; i <= current_function_id; i++){
@@ -577,7 +581,8 @@ void LinearSUClustering::bmoSearch(){
 }
 
 // Public search method
-void LinearSUClustering::search() {
+StatusCode LinearSUClustering::search() {
+
 
   MaxSATFormulaExtended *maxsat_formula_extended =
       static_cast<MaxSATFormulaExtended *>(maxsat_formula);
@@ -608,7 +613,8 @@ void LinearSUClustering::search() {
          originalWeights.size(), orderWeights.size());
 
   //printConfiguration(is_bmo, maxsat_formula->getProblemType());
-  bmoSearch();
+  return bmoSearch();
+
 }
 
 /************************************************************************************************

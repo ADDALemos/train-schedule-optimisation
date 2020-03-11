@@ -27,8 +27,6 @@
 
 #include "Alg_LinearSU.h"
 
-#define MAX_CLAUSES 3000000
-
 using namespace openwbo;
 
 /************************************************************************************************
@@ -57,7 +55,7 @@ using namespace openwbo;
   |    * 'nbCores' is updated.
   |
   |________________________________________________________________________________________________@*/
-void LinearSU::bmoSearch() {
+StatusCode LinearSU::bmoSearch() {
   assert(orderWeights.size() > 0);
   lbool res = l_True;
 
@@ -91,7 +89,8 @@ void LinearSU::bmoSearch() {
         // If current weight is the same as the minimum weight, then we are in
         // the last lexicographical function.
         saveModel(solver->model);
-        printf("o %" PRId64 "\n", newCost + lbCost + off_set);
+        savePhase(solver);
+        printBound(newCost + lbCost + off_set);
         ubCost = newCost + lbCost;
       } else {
         if (verbosity > 0)
@@ -102,7 +101,7 @@ void LinearSU::bmoSearch() {
       if (newCost == 0 && currentWeight == minWeight) {
         // Optimum value has been found.
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       } else {
 
         if (newCost == 0) {
@@ -145,10 +144,10 @@ void LinearSU::bmoSearch() {
           assert(nbSatisfiable == 0);
           // If no model was found then the MaxSAT formula is unsatisfiable
           printAnswer(_UNSATISFIABLE_);
-          exit(_UNSATISFIABLE_);
+          return _UNSATISFIABLE_;
         } else {
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
       } else {
 
@@ -195,7 +194,7 @@ void LinearSU::bmoSearch() {
   |    * 'nbCores' is updated.
   |
   |________________________________________________________________________________________________@*/
-void LinearSU::normalSearch() {
+StatusCode LinearSU::normalSearch() {
 
   lbool res = l_True;
 
@@ -214,13 +213,14 @@ void LinearSU::normalSearch() {
       nbSatisfiable++;
       uint64_t newCost = computeCostModel(solver->model);
       saveModel(solver->model);
+      savePhase(solver);
       if (maxsat_formula->getFormat() == _FORMAT_PB_) {
         // optimization problem
         if (maxsat_formula->getObjFunction() != NULL) {
-          printf("o %" PRId64 "\n", newCost + off_set);
+          printBound(newCost + off_set);
         }
       } else
-        printf("o %" PRId64 "\n", newCost + off_set); 
+        printBound(newCost + off_set);
 
       if (newCost == 0) {
         // If there is a model with value 0 then it is an optimal model
@@ -229,22 +229,23 @@ void LinearSU::normalSearch() {
         if (maxsat_formula->getFormat() == _FORMAT_PB_ &&
             maxsat_formula->getObjFunction() == NULL) {
           printAnswer(_SATISFIABLE_);
-          exit(_SATISFIABLE_);
+          return _SATISFIABLE_;
         } else {
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
 
       } else {
         if (maxsat_formula->getProblemType() == _WEIGHTED_) {
           if (!encoder.hasPBEncoding()){
-            // check if we can encode with GTE
-            encoder.setPBEncoding(_PB_GTE_);
-            int expected_clauses = encoder.predictPB(solver, objFunction, coeffs, newCost-1);
-            printf("c GTE auxiliary #clauses = %d\n",expected_clauses);
-            if (expected_clauses >= MAX_CLAUSES) {
-              printf("c Warn: changing to Adder encoding.\n");
-              encoder.setPBEncoding(_PB_ADDER_);
+            // check if GTE encoding will generate too many clauses
+            // TODO: generalize this to all PB encodings
+            if (encoder.getPBEncoding() == _PB_GTE_){
+              int expected_clauses = encoder.predictPB(solver, objFunction, coeffs, newCost-1);
+              if (expected_clauses >= _MAX_CLAUSES_) {
+                printf("c Warn: changing to Adder encoding.\n");
+                encoder.setPBEncoding(_PB_ADDER_);
+              } else printf("c GTE auxiliary #clauses = %d\n",expected_clauses);
             }
             encoder.encodePB(solver, objFunction, coeffs, newCost - 1);
           }
@@ -266,17 +267,19 @@ void LinearSU::normalSearch() {
         assert(nbSatisfiable == 0);
         // If no model was found then the MaxSAT formula is unsatisfiable
         printAnswer(_UNSATISFIABLE_);
-        exit(_UNSATISFIABLE_);
+        return _UNSATISFIABLE_;
       } else {
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       }
     }
   }
+
+  return _ERROR_;
 }
 
 // Public search method
-void LinearSU::search() {
+StatusCode LinearSU::search() {
 
   if (maxsat_formula->getProblemType() == _WEIGHTED_)
     is_bmo = isBMO();
@@ -285,11 +288,11 @@ void LinearSU::search() {
 
   if (maxsat_formula->getProblemType() == _WEIGHTED_) {
     if (bmoMode && is_bmo)
-      bmoSearch();
+      return bmoSearch();
     else
-      normalSearch();
+      return normalSearch();
   } else
-    normalSearch();
+    return normalSearch();
 }
 
 /************************************************************************************************
@@ -316,6 +319,8 @@ Solver *LinearSU::rebuildSolver(uint64_t min_weight) {
   seen.growTo(maxsat_formula->nVars(), false);
 
   Solver *S = newSATSolver();
+
+  reserveSATVariables(S, maxsat_formula->nVars());
 
   for (int i = 0; i < maxsat_formula->nVars(); i++)
     newSATVariable(S);
@@ -467,3 +472,25 @@ void LinearSU::print_LinearSU_configuration() {
     }
   }
 }
+
+ // save polarity from last model
+ void LinearSU::savePhase(Solver * solver) {
+
+  assert (solver->model.size() > 0);
+  assert (solver->model.size() >= maxsat_formula->nInitialVars());
+
+  // save the polarity of the original variables
+  for (int i = 0; i < maxsat_formula->nInitialVars(); i++){
+    solver->setPolarity(i, solver->model[i] == l_False);
+  }
+
+  // save the polarity of the relaxation variables
+  for (int i = 0; i < maxsat_formula->nSoft(); i++){
+    assert (maxsat_formula->getSoftClause(i).relaxation_vars.size() == 1);
+    maxsat_formula->getSoftClause(i).relaxation_vars[0];
+    int v = var(maxsat_formula->getSoftClause(i).relaxation_vars[0]);
+    assert (v < solver->model.size());
+    solver->setPolarity(v, solver->model[v] == l_False);
+  }
+
+ }

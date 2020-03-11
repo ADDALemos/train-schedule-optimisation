@@ -179,7 +179,7 @@ OLLMod::findNextWeightDiversity(uint64_t weight,
   return nextWeight;
 }
 
-void OLLMod::unweighted() {
+StatusCode OLLMod::unweighted() {
 
   // nbInitialVariables = nVars();
   lbool res = l_True;
@@ -229,11 +229,11 @@ void OLLMod::unweighted() {
               maxsat_formula->getObjFunction() == NULL) {
             printFormulaStats(solver);
             printAnswer(_SATISFIABLE_);
-            exit(_SATISFIABLE_);
+            return _SATISFIABLE_;
           } else {
             printFormulaStats(solver);
             printAnswer(_OPTIMUM_);
-            exit(_OPTIMUM_);
+            return _OPTIMUM_;
           }
         }
 
@@ -243,7 +243,7 @@ void OLLMod::unweighted() {
         assert(lbCost == newCost);
         printFormulaStats(solver);
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       }
     }
 
@@ -256,7 +256,7 @@ void OLLMod::unweighted() {
       if (nbSatisfiable == 0) {
         printFormulaStats(solver);
         printAnswer(_UNSATISFIABLE_);
-        exit(_UNSATISFIABLE_);
+        return _UNSATISFIABLE_;
       }
 
       if (lbCost == ubCost) {
@@ -265,7 +265,7 @@ void OLLMod::unweighted() {
           printf("c LB = UB\n");
         printFormulaStats(solver);
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       }
 
       sumSizeCores += solver->conflict.size();
@@ -354,6 +354,7 @@ void OLLMod::unweighted() {
 
         Encoder *e = new Encoder();
         e->setIncremental(_INCREMENTAL_ITERATIVE_);
+        printf("here3\n");
         e->buildCardinality(solver, relax_harden, 1);
         soft_cardinality.push(e);
         assert(e->outputs().size() > 1);
@@ -387,7 +388,7 @@ void OLLMod::unweighted() {
   }
 }
 
-void OLLMod::weighted() {
+StatusCode OLLMod::weighted() {
   // nbInitialVariables = nVars();
   lbool res = l_True;
   initRelaxation();
@@ -495,7 +496,7 @@ void OLLMod::weighted() {
           assert(lbCost == newCost);
           printFormulaStats(solver);
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
       }
     }
@@ -533,7 +534,7 @@ void OLLMod::weighted() {
       if (nbSatisfiable == 0) {
         printFormulaStats(solver);
         printAnswer(_UNSATISFIABLE_);
-        exit(_UNSATISFIABLE_);
+        return _UNSATISFIABLE_;
       }
 
       if (lbCost == ubCost) {
@@ -542,7 +543,7 @@ void OLLMod::weighted() {
           printf("c LB = UB\n");
         printFormulaStats(solver);
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       }
 
       sumSizeCores += solver->conflict.size();
@@ -670,6 +671,7 @@ void OLLMod::weighted() {
             // duplicate cardinality constraint???
             Encoder *e = new Encoder();
             e->setIncremental(_INCREMENTAL_ITERATIVE_);
+            printf("here\n");
             e->buildCardinality(solver,
                                 soft_cardinality[soft_id.first.first]->lits(),
                                 soft_id.first.second);
@@ -813,6 +815,8 @@ void OLLMod::weighted() {
         printf(" <= 1\n");
         */
         Encoder *e = new Encoder();
+        printf("here1\n");
+
         e->setIncremental(_INCREMENTAL_ITERATIVE_);
         e->buildCardinality(solver, relax_harden, 1);
         soft_cardinality.push(e);
@@ -858,7 +862,7 @@ void OLLMod::weighted() {
   }
 }
 
-void OLLMod::search() {
+StatusCode OLLMod::search() {
 
   MaxSATFormulaExtended *maxsat_formula_extended =
       static_cast<MaxSATFormulaExtended *>(maxsat_formula);
@@ -875,9 +879,10 @@ void OLLMod::search() {
 
   if (maxsat_formula->getProblemType() == _WEIGHTED_) {
     // FIXME: consider lexicographical optimization for weighted problems
-    weighted();
+    return weighted();
   } else
-    unweighted();
+    return unweighted();
+
 }
 
 /************************************************************************************************

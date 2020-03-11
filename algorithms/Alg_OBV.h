@@ -68,7 +68,7 @@ public:
     coeffs.clear();
   }
 
-  void search(); // Linear search.
+    StatusCode search(); // Linear search.
 
   // Print solver configuration.
   void printConfiguration() {
@@ -105,7 +105,7 @@ protected:
 
   // Linear search algorithms.
   //
-  void normalSearch(); // Classic linear search algorithm.
+  StatusCode normalSearch(); // Classic linear search algorithm.
   void bmoSearch();    // Linear search algorithm with lexicographical order.
 
   // Other

@@ -27,6 +27,7 @@
 
 #ifndef MaxTypes_h
 #define MaxTypes_h
+#define _MAX_CLAUSES_ 3000000
 
 enum { _FORMAT_MAXSAT_ = 0, _FORMAT_PB_ };
 enum { _VERBOSITY_MINIMAL_ = 0, _VERBOSITY_SOME_ };
@@ -43,13 +44,7 @@ enum {
   _ALGORITHM_LSU_MRSBEAVER_,
   _ALGORITHM_LSU_MCS_
 };
-enum {
-  _SATISFIABLE_ = 10,
-  _UNSATISFIABLE_ = 20,
-  _OPTIMUM_ = 30,
-  _UNKNOWN_ = 40,
-  _ERROR_ = 50
-};
+
 enum {
   _INCREMENTAL_NONE_ = 0,
   _INCREMENTAL_BLOCKING_,
@@ -66,6 +61,14 @@ enum class Statistics {
 	_MEDIAN_ = 1,
 	_MIN_ = 2,
 	_MAX_
+};
+
+enum StatusCode {
+	_SATISFIABLE_ = 10,
+	_UNSATISFIABLE_ = 20,
+	_OPTIMUM_ = 30,
+	_UNKNOWN_ = 40,
+	_ERROR_ = 50
 };
 
 enum class ClusterAlg {

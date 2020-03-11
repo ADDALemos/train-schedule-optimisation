@@ -68,12 +68,13 @@ public:
     coeffs.clear();
   }
 
-  void search(); // Linear search.
+  StatusCode search(); // Linear search.
 
   // Print solver configuration.
   void printConfiguration(bool bmo, int ptype) {
 
-    printf("c ==========================================[ Solver Settings "
+
+    printf("c ==========================================[ LI Solver Settings "
            "]============================================\n");
     printf("c |                                                                "
            "                                       |\n");
@@ -96,17 +97,20 @@ protected:
 
   // Linear search algorithms.
   //
-  void normalSearch(); // Classic linear search algorithm.
-  void bmoSearch();    // Linear search algorithm with lexicographical order.
+  StatusCode normalSearch(); // Classic linear search algorithm.
+  StatusCode bmoSearch();    // Linear search algorithm with lexicographical order.
 
   // Greater than comparator.
-  bool static greaterThan(int i, int j) { return (i > j); }
+  bool static greaterThan(uint64_t i, uint64_t j) { return (i > j); }
 
   // Other
   void initRelaxation(); // Relaxes soft clauses.
 
   // Print LinearSU configuration.
   void print_LinearSU_configuration();
+
+  // savePhase
+  void savePhase(Solver * solver);
 
   Solver *solver;  // SAT Solver used as a black box.
   Encoder encoder; // Interface for the encoder of constraints to CNF.

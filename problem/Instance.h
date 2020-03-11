@@ -23,6 +23,7 @@ public:
     std::map<std::string,std::vector<route_section*>> exitMap;
     std::map<std::string,std::vector<route_section*>> markerMap;
     std::map<std::string, std::map<int,std::vector<route_section*>>> end;
+    std::map<std::string, double > route_pen;//
 
 
 };

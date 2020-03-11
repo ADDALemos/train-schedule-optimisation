@@ -53,7 +53,7 @@ using namespace openwbo;
   |    * 'nbSatisfiable' is increased by 1.
   |
   |________________________________________________________________________________________________@*/
-void BLS::saveModel(vec<lbool> &currentModel){
+void BLS::saveModel(vec <lbool> &currentModel) throw() {
   //assert (n_initial_vars != 0);
   assert (currentModel.size() != 0);
   
@@ -64,6 +64,7 @@ void BLS::saveModel(vec<lbool> &currentModel){
   }
   
   nbSatisfiable++;
+
 }
 
 
@@ -130,7 +131,7 @@ void BLS::initUndefClauses(vec<int>& undefClauses) {
     undefClauses.push(i);
 }
 
-void BLS::LSU() {
+StatusCode BLS::LSU() {
 
   printf("c Warn: changing to LSU algorithm.\n");
 
@@ -160,7 +161,7 @@ void BLS::LSU() {
         ubCost = newCost;
 
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
 
       } else {
           // Unweighted.
@@ -177,10 +178,10 @@ void BLS::LSU() {
         assert(nbSatisfiable == 0);
         // If no model was found then the MaxSAT formula is unsatisfiable
         printAnswer(_UNSATISFIABLE_);
-        exit(_UNSATISFIABLE_);
+        return _UNSATISFIABLE_;
       } else {
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       }
     }
   }
@@ -229,12 +230,12 @@ bool BLS::findNextMCS() {
     // Hard clause set in unsat!
     if (nbMCS == 0) {
       printAnswer(_UNSATISFIABLE_);
-      exit(_UNSATISFIABLE_);
+      return _UNSATISFIABLE_;
     }
     else {
       // It is not the first MCS. Hence, all MCS were found.
       printAnswer(_OPTIMUM_);
-      exit(_OPTIMUM_);
+      return _OPTIMUM_;
     }
   }
   else if (res == l_True) {
@@ -327,7 +328,7 @@ bool BLS::findNextMCS() {
 
 
 // Public search method
-void BLS::search() {
+StatusCode BLS::search() {
 
   basicSearch(_maxMCS);
 
@@ -335,7 +336,7 @@ void BLS::search() {
   solver->budgetOff();  
   local_limit = false;
 
-  LSU();
+  return LSU();
 }
 
 

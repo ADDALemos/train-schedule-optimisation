@@ -192,7 +192,7 @@ uint64_t LinearSUMod::computeOriginalCost(vec<lbool> &currentModel,
   |    * 'nbCores' is updated.
   |
   |________________________________________________________________________________________________@*/
-void LinearSUMod::bmoSearch() {
+StatusCode LinearSUMod::bmoSearch() {
   assert(orderWeights.size() > 0);
   lbool res = l_True;
 
@@ -243,7 +243,7 @@ void LinearSUMod::bmoSearch() {
         // Optimum value has been found.
         printFormulaStats(solver);
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       } else {
 
         if (newCost == 0) {
@@ -287,11 +287,11 @@ void LinearSUMod::bmoSearch() {
           // If no model was found then the MaxSAT formula is unsatisfiable
           printFormulaStats(solver);
           printAnswer(_UNSATISFIABLE_);
-          exit(_UNSATISFIABLE_);
+          return _UNSATISFIABLE_;
         } else {
           printFormulaStats(solver);
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
       } else {
 
@@ -338,7 +338,7 @@ void LinearSUMod::bmoSearch() {
   |    * 'nbCores' is updated.
   |
   |________________________________________________________________________________________________@*/
-void LinearSUMod::normalSearch() {
+StatusCode LinearSUMod::normalSearch() {
 
   lbool res = l_True;
 
@@ -384,7 +384,7 @@ void LinearSUMod::normalSearch() {
         } else {
           printFormulaStats(solver);
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);
+          return _OPTIMUM_;
         }
 
       } else {
@@ -411,7 +411,7 @@ void LinearSUMod::normalSearch() {
         // If no model was found then the MaxSAT formula is unsatisfiable
         printFormulaStats(solver);
         printAnswer(_UNSATISFIABLE_);
-        exit(_UNSATISFIABLE_);
+        return _UNSATISFIABLE_;
       } else {
         // printFormulaStats(solver);
         if (!complete){
@@ -438,7 +438,7 @@ void LinearSUMod::normalSearch() {
           res = l_True;
         } else {
           printAnswer(_OPTIMUM_);
-          exit(_OPTIMUM_);          
+          return _OPTIMUM_;          
         }
       }
     }
@@ -446,7 +446,7 @@ void LinearSUMod::normalSearch() {
 }
 
 // Public search method
-void LinearSUMod::search() {
+StatusCode LinearSUMod::search() {
 
   MaxSATFormulaExtended *maxsat_formula_extended =
       static_cast<MaxSATFormulaExtended *>(maxsat_formula);
@@ -464,7 +464,8 @@ void LinearSUMod::search() {
   //     normalSearch();
   // } else
   //   normalSearch();
-  normalSearch();
+  return normalSearch();
+
 }
 
 /************************************************************************************************

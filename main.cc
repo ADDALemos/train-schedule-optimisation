@@ -362,13 +362,13 @@ int main(int argc, char **argv) {
                 if(it1->second[0]->route_alternative_marker_at_entry.size()==0){
                     vec<Lit> lit;
                     lit.push(~mkLit(getVariableID("t_"+it->first+"_"+std::to_string(it1->first),maxsat_formula)));
-                    printf("~%s ",("t_"+it->first+"_"+std::to_string(it1->first)).c_str());
+                    //printf("~%s ",("t_"+it->first+"_"+std::to_string(it1->first)).c_str());
                     for (int i = 1; i < it1->second.size(); ++i) {
                         lit.push(mkLit(getVariableID("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number),maxsat_formula)));
-                        printf("%s ",("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number)).c_str());
+                        //printf("%s ",("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number)).c_str());
 
                     }
-                    printf("\n");
+                    //printf("\n");
                     maxsat_formula->addHardClause(lit);
                     lit.clear();
                 }
@@ -389,16 +389,15 @@ int main(int argc, char **argv) {
 
                 lit.push(~mkLit(getVariableID("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number),
                                               maxsat_formula)));
-                printf("~%s ", ("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number)).c_str());
+                //printf("~%s ", ("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number)).c_str());
                 for (int i = 0; i < instance.exitMap[it2->first].size(); ++i) {
                     lit.push(mkLit(getVariableID(
                             "t_" + rid + "_" + std::to_string(instance.exitMap[it2->first][i]->sequence_number),
                             maxsat_formula)));
-                    printf("%s ", ("t_" + rid + "_" +
-                                   std::to_string(instance.exitMap[it2->first][i]->sequence_number)).c_str());
+                    //printf("%s ", ("t_" + rid + "_" + std::to_string(instance.exitMap[it2->first][i]->sequence_number)).c_str());
 
                 }
-                printf("\n");
+                //printf("\n");
                 maxsat_formula->addHardClause(lit);
                 lit.clear();
             }
@@ -425,6 +424,24 @@ int main(int argc, char **argv) {
             }
 
         }
+        printf("Opt\n");
+        std::map<std::string, double >::iterator itpen = instance.route_pen.begin();;
+        PBObjFunction *of = new PBObjFunction();
+        while (itpen != instance.route_pen.end()) {
+            //vec<Lit> litpen;
+            std::string rid = itpen->first.substr(0, itpen->first.find(delimiter));
+            std::string section = itpen->first.substr(itpen->first.find(delimiter) + 1, itpen->first.size());
+            //litpen.push(mkLit(getVariableID("t_" + rid + "_" + section,maxsat_formula)));
+
+            //printf("%f %s \n",itpen->second,("t_" + rid + "_" + section).c_str());
+            of->addProduct(mkLit(getVariableID(
+                    "t_" + rid + "_" + section,maxsat_formula)),ceil(itpen->second));
+            //maxsat_formula->addSoftClause(100,litpen);
+            //litpen.clear();
+            itpen++;
+        }
+        maxsat_formula->addObjFunction(of);
+
 
 
         /*compact graph
@@ -462,10 +479,10 @@ int main(int argc, char **argv) {
             }
         }
 
+       /*if() {
+            outputJSONFile(instance);
+        }*/
         S->search();
-
-
-        outputJSONFile(instance);
 
 
 
@@ -559,30 +576,30 @@ void outputJSONFile(Instance instance) {
     writer.Int(42);             // follow by a value.
     writer.Key("train_runs");
     writer.StartArray();
-    for(int i=0;i<1;i++){
+    for(int i=0;i<instance.train.size();i++){
         writer.Key("service_intention_id");
-        writer.Int(2);
+        writer.String(instance.train[i].id.c_str());
         writer.Key("train_run_sections");
         writer.StartArray();
-        for(int j=0;j<1;j++){
+        for(int j=0;j<instance.train[i].results.size();j++){
             writer.Key("entry_time");
             writer.String("");
             writer.Key("exit_time");
             writer.String("");
             writer.Key("route");
-            writer.String("");
+            writer.String((instance.train[i].id+"#"+std::to_string(instance.train[i].results[j]->sequence_number)).c_str());
 
             writer.Key("route_section_id");
-            writer.String("");
+            writer.Int(j);
 
             writer.Key("sequence_number");
-            writer.String("");
+            writer.Int(instance.train[i].results[j]->sequence_number);
 
             writer.Key("route_path");
             writer.String("");
 
             writer.Key("section_requirement");
-            writer.String("");
+            writer.String((instance.train[i].results[j]->section_marke.front()).c_str());
 
 
 
@@ -607,7 +624,7 @@ void outputJSONFile(Instance instance) {
 
     //Solution to file
     ofstream myfile;
-    myfile.open (instance.label+".json");
+    myfile.open ("data/"+instance.label+".json");
     myfile << s.GetString();
     myfile.close();
 
@@ -628,7 +645,7 @@ Instance readJSONFile(char* local) {
     Instance.hash=d["hash"].GetInt();
     Instance.label=d["label"].GetString();
     std::vector<Train> tt;
-
+    std::map<std::string, double > route_pen;
     for (int i = 0; i < d["service_intentions"].GetArray().Size(); ++i) {
         Train train;
         if(d["service_intentions"].GetArray()[i]["id"].IsInt())
@@ -845,7 +862,8 @@ Instance readJSONFile(char* local) {
                         rs->penalty = 0;
                 } else
                     rs->penalty = 0;
-
+                if(rs->penalty != 0)
+                    route_pen.insert(std::pair<std::string, double>(r.id+"_"+std::to_string(rs->sequence_number),rs->penalty));
                 rs->starting_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
                 rs->minimum_running_time = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
                 rs->minimum_running_time = rs->minimum_running_time.substr(2, 2);
@@ -893,6 +911,7 @@ Instance readJSONFile(char* local) {
     Instance.exitMap=exitMap;
     Instance.entryMap=entryMap;
     Instance.markerMap=markerMap;
+    Instance.route_pen=route_pen;
     Instance.end=end1;
 
     std::list<Resource> reso;

@@ -116,7 +116,8 @@ public:
   // Incremental information.
   void print_Incremental_configuration(int incremental);
 
-  virtual void search();      // MaxSAT search.
+    virtual StatusCode search();      // MaxSAT search.
+    StatusCode getStatus() { return searchStatus; }
   void printAnswer(int type); // Print the answer.
 
   // Tests if a MaxSAT formula has a lexicographical optimization criterion.
@@ -169,6 +170,9 @@ protected:
   // Properties of the MaxSAT formula
   //
   vec<lbool> model; // Stores the best satisfying model.
+    StatusCode searchStatus; // Stores the current state of the formula
+    void reserveSATVariables(Solver *S, unsigned maxVariable); // Reserve space for multiple variables in the SAT solver.
+    void printBound(int64_t bound); // Print the current bound.
 
   // Statistics
   //

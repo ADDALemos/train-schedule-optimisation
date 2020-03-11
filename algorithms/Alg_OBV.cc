@@ -229,7 +229,7 @@ uint64_t OBV::ums_obv_bs(Solver * solver, std::vector<Lit>& outputs, uint64_t ub
   |    * 'nbCores' is updated.
   |
   |________________________________________________________________________________________________@*/
-void OBV::normalSearch() {
+StatusCode OBV::normalSearch() {
 
   lbool res = l_True;
 
@@ -272,7 +272,7 @@ void OBV::normalSearch() {
 
     if (model.size() == 0){
       printAnswer(_UNSATISFIABLE_);
-      exit(_UNSATISFIABLE_);
+      return _UNSATISFIABLE_;
     }
 
     if (res == l_True) {
@@ -290,7 +290,7 @@ void OBV::normalSearch() {
         ubCost = newCost;
 
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
 
       } else {
           // Unweighted.
@@ -308,22 +308,23 @@ void OBV::normalSearch() {
         assert(nbSatisfiable == 0);
         // If no model was found then the MaxSAT formula is unsatisfiable
         printAnswer(_UNSATISFIABLE_);
-        exit(_UNSATISFIABLE_);
+        return _UNSATISFIABLE_;
       } else {
         printAnswer(_OPTIMUM_);
-        exit(_OPTIMUM_);
+        return _OPTIMUM_;
       }
     }
   }
 }
 
 // Public search method
-void OBV::search() {
+StatusCode OBV::search() {
 
   assert (maxsat_formula->getProblemType() == _UNWEIGHTED_);
 
   printConfiguration();
-  normalSearch();
+  return normalSearch();
+
 }
 
 /************************************************************************************************
