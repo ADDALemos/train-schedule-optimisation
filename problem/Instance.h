@@ -10,6 +10,7 @@
 #include <map>
 #include "Train.h"
 #include "Route.h"
+#include "train_run_sections.h"
 
 class Instance {
 public:
@@ -19,11 +20,14 @@ public:
     std::vector<Train> train;
     std::map<std::string,Route> route;
     std::list<Resource> resource;
+    std::map<std::string,std::map<int,route_section*>> sectionMap;
     std::map<std::string,std::vector<route_section*>> entryMap;
     std::map<std::string,std::vector<route_section*>> exitMap;
     std::map<std::string,std::vector<route_section*>> markerMap;
     std::map<std::string, std::map<int,std::vector<route_section*>>> end;
     std::map<std::string, double > route_pen;//
+    std::map<std::string,std::map<int,train_run_sections*>> results;
+
 
 
 };

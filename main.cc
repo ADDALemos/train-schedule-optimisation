@@ -77,7 +77,7 @@
 #include "rapidjson/istreamwrapper.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-
+#include "rapidjson/prettywriter.h"
 
 
 //Problem Domain
@@ -87,7 +87,6 @@
 #include "problem/Route.h"
 #include "problem/route_path.h"
 #include "problem/route_section.h"
-
 
 
 #define VER1_(x) #x
@@ -351,7 +350,7 @@ int main(int argc, char **argv) {
 
         /*for (int i = 0; i < instance.train.size() ; ++i) {
             for (int j = 0; j < instance.route[instance.train[i].route].totalSeq; ++j) {
-                getVariableID("t_"+instance.train[i].id+"_"+std::to_string(j),maxsat_formula);
+                getVariableID("t^"+instance.train[i].id+"^"+std::to_string(j),maxsat_formula);
             }
         }*/
         std::map<std::string, std::map<int,std::vector<route_section*>>>::iterator it = instance.end.begin();;
@@ -361,11 +360,11 @@ int main(int argc, char **argv) {
             while (it1 != it->second.end()) {
                 if(it1->second[0]->route_alternative_marker_at_entry.size()==0){
                     vec<Lit> lit;
-                    lit.push(~mkLit(getVariableID("t_"+it->first+"_"+std::to_string(it1->first),maxsat_formula)));
-                    //printf("~%s ",("t_"+it->first+"_"+std::to_string(it1->first)).c_str());
+                    lit.push(~mkLit(getVariableID("t^"+it->first+"^"+std::to_string(it1->first),maxsat_formula)));
+                    //printf("~%s ",("t^"+it->first+"^"+std::to_string(it1->first)).c_str());
                     for (int i = 1; i < it1->second.size(); ++i) {
-                        lit.push(mkLit(getVariableID("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number),maxsat_formula)));
-                        //printf("%s ",("t_"+it->first+"_"+std::to_string(it1->second[i]->sequence_number)).c_str());
+                        lit.push(mkLit(getVariableID("t^"+it->first+"^"+std::to_string(it1->second[i]->sequence_number),maxsat_formula)));
+                        //printf("%s ",("t^"+it->first+"^"+std::to_string(it1->second[i]->sequence_number)).c_str());
 
                     }
                     //printf("\n");
@@ -379,27 +378,28 @@ int main(int argc, char **argv) {
 
         }
         printf("splits\n");
-        std::string delimiter = "_";
+        std::string delimiter = "^";
         std::map<std::string,std::vector<route_section*>> ::iterator it2 = instance.entryMap.begin();;
 
         while (it2 != instance.entryMap.end()) {
             for(int y=0; y<it2->second.size();y++) {
                 vec <Lit> lit;
                 std::string rid = it2->first.substr(it2->first.find(delimiter) + 1, it2->first.size());
+                if(instance.exitMap[it2->first].size()>0) {
+                    lit.push(~mkLit(getVariableID("t^" + rid + "^" + std::to_string(it2->second[y]->sequence_number),
+                                                  maxsat_formula)));
+                    // printf("~%s ", ("t^" + rid + "^" + std::to_string(it2->second[y]->sequence_number)).c_str());
+                    for (int i = 0; i < instance.exitMap[it2->first].size(); ++i) {
+                        lit.push(mkLit(getVariableID(
+                                "t^" + rid + "^" + std::to_string(instance.exitMap[it2->first][i]->sequence_number),
+                                maxsat_formula)));
+                        //printf("%s ", ("t^" + rid + "^" + std::to_string(instance.exitMap[it2->first][i]->sequence_number)).c_str());
 
-                lit.push(~mkLit(getVariableID("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number),
-                                              maxsat_formula)));
-                //printf("~%s ", ("t_" + rid + "_" + std::to_string(it2->second[y]->sequence_number)).c_str());
-                for (int i = 0; i < instance.exitMap[it2->first].size(); ++i) {
-                    lit.push(mkLit(getVariableID(
-                            "t_" + rid + "_" + std::to_string(instance.exitMap[it2->first][i]->sequence_number),
-                            maxsat_formula)));
-                    //printf("%s ", ("t_" + rid + "_" + std::to_string(instance.exitMap[it2->first][i]->sequence_number)).c_str());
-
+                    }
+                    //printf("\n");
+                    maxsat_formula->addHardClause(lit);
+                    lit.clear();
                 }
-                //printf("\n");
-                maxsat_formula->addHardClause(lit);
-                lit.clear();
             }
             it2++;
 
@@ -413,9 +413,9 @@ int main(int argc, char **argv) {
             for(Requirement *r: instance.train[j].t){
 
                 vec<Lit> lit;
-                    for(int k=0; k<instance.markerMap[instance.train[j].id+"_"+r->section_marker].size();k++){
+                    for(int k=0; k<instance.markerMap[instance.train[j].id+"^"+r->section_marker].size();k++){
                         lit.push(mkLit(getVariableID(
-                                "t_" + instance.train[j].id + "_" + std::to_string(instance.markerMap[instance.train[j].id+"_"+r->section_marker][k]->sequence_number),maxsat_formula)));
+                                "t^" + instance.train[j].id + "^" + std::to_string(instance.markerMap[instance.train[j].id+"^"+r->section_marker][k]->sequence_number),maxsat_formula)));
                     }
 
                     maxsat_formula->addHardClause(lit);
@@ -431,11 +431,11 @@ int main(int argc, char **argv) {
             //vec<Lit> litpen;
             std::string rid = itpen->first.substr(0, itpen->first.find(delimiter));
             std::string section = itpen->first.substr(itpen->first.find(delimiter) + 1, itpen->first.size());
-            //litpen.push(mkLit(getVariableID("t_" + rid + "_" + section,maxsat_formula)));
+            //litpen.push(mkLit(getVariableID("t^" + rid + "^" + section,maxsat_formula)));
 
-            //printf("%f %s \n",itpen->second,("t_" + rid + "_" + section).c_str());
+            //printf("%f %s \n",itpen->second,("t^" + rid + "^" + section).c_str());
             of->addProduct(mkLit(getVariableID(
-                    "t_" + rid + "_" + section,maxsat_formula)),ceil(itpen->second));
+                    "t^" + rid + "^" + section,maxsat_formula)),ceil(itpen->second));
             //maxsat_formula->addSoftClause(100,litpen);
             //litpen.clear();
             itpen++;
@@ -479,10 +479,49 @@ int main(int argc, char **argv) {
             }
         }
 
-       /*if() {
+        if(S->search()) {
+            for (int i = 0; i < S->model.size(); i++) {
+                indexMap::const_iterator iter = maxsat_formula->getIndexToName().find(i);
+                if (iter != maxsat_formula->getIndexToName().end()) {
+                    if (S->model[i] != l_False) {
+                        std::string id =iter->second.substr(iter->second.find(delimiter) + 1, iter->second.size());
+                        std::string sid = id.substr(id.find(delimiter) + 1, id.size());
+                        std::string rid = id.substr(0,id.find(delimiter));
+                        train_run_sections * trs = new train_run_sections();
+                        trs->entry_time="";
+                        trs->exit_time="";
+                        trs->route=rid;
+                        trs->route_section_id=rid+"#"+sid;
+                        trs->route_path=instance.sectionMap[rid][std::stoi(sid)]->route_pathName;
+                        for (int j = 0; j < instance.train.size(); ++j) {
+                            if(instance.train[j].id.compare(rid)!=0)
+                                continue;
+                            for (Requirement *r: instance.train[j].t) {
+                                for(int k=0; k<instance.markerMap[instance.train[j].id+"^"+r->section_marker].size();k++) {
+                                      //  printf("%s %s %s %s \n",rid.c_str(),sid.c_str(),std::to_string(instance.markerMap[instance.train[j].id+"^"+r->section_marker][k]->sequence_number).c_str(),r->section_marker.c_str());
+                                    if (std::to_string(instance.markerMap[instance.train[j].id+"^"+r->section_marker][k]->sequence_number).compare(sid) == 0) {
+                                        trs->section_requirement=r->section_marker;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if(instance.results.find(rid)!=instance.results.end())
+                            instance.results[rid].insert(std::pair<int,train_run_sections*>(std::stoi(sid),trs));
+                        else{
+                            std::map<int,train_run_sections*> trsv;
+                            trsv.insert(std::pair<int,train_run_sections*>(std::stoi(sid),trs));
+                            instance.results.insert(std::pair<std::string,std::map<int,train_run_sections*>>(rid,trsv));
+                        }
+
+
+                    }
+
+                }
+            }
             outputJSONFile(instance);
-        }*/
-        S->search();
+        }
+
 
 
 
@@ -566,7 +605,8 @@ int getVariableID(std::string varName,MaxSATFormula*maxsat_formula) {
 
 void outputJSONFile(Instance instance) {
     StringBuffer s;
-    Writer<StringBuffer> writer(s);
+
+    PrettyWriter<StringBuffer> writer(s);
     writer.StartObject();               // Between StartObject()/EndObject(),
     writer.Key("problem_instance_label");                // output a key,
     writer.String(instance.label.c_str());             // follow by a value.
@@ -576,36 +616,50 @@ void outputJSONFile(Instance instance) {
     writer.Int(42);             // follow by a value.
     writer.Key("train_runs");
     writer.StartArray();
-    for(int i=0;i<instance.train.size();i++){
+    std::map<std::string,std::map<int,train_run_sections*>> ::iterator it = instance.results.begin();
+    while (it != instance.results.end()) {
+        writer.StartObject();
         writer.Key("service_intention_id");
-        writer.String(instance.train[i].id.c_str());
+        writer.String(it->first.c_str());
         writer.Key("train_run_sections");
         writer.StartArray();
-        for(int j=0;j<instance.train[i].results.size();j++){
+        std::map<int,train_run_sections*>::iterator it1 = it->second.begin();
+        int j=1;
+        while (it1 != it->second.end()) {
+            writer.StartObject();
             writer.Key("entry_time");
-            writer.String("");
+            writer.String(it1->second->entry_time.c_str());
             writer.Key("exit_time");
-            writer.String("");
+            writer.String(it1->second->exit_time.c_str());
             writer.Key("route");
-            writer.String((instance.train[i].id+"#"+std::to_string(instance.train[i].results[j]->sequence_number)).c_str());
+            writer.String(it1->second->route.c_str());
 
             writer.Key("route_section_id");
-            writer.Int(j);
+            writer.String(it1->second->route_section_id.c_str());
 
             writer.Key("sequence_number");
-            writer.Int(instance.train[i].results[j]->sequence_number);
+            writer.Int(j);
 
             writer.Key("route_path");
-            writer.String("");
+            writer.String(it1->second->route_path.c_str());
 
             writer.Key("section_requirement");
-            writer.String((instance.train[i].results[j]->section_marke.front()).c_str());
+            if(it1->second->section_requirement.size()==0)
+                writer.Null();
+            else
+                writer.String(it1->second->section_requirement.c_str());
 
 
+            writer.EndObject();
+            it1++;
+            j++;
 
 
         }
+        it++;
         writer.EndArray();
+        writer.EndObject();
+
 
 
     }
@@ -623,8 +677,9 @@ void outputJSONFile(Instance instance) {
 
 
     //Solution to file
+
     ofstream myfile;
-    myfile.open ("data/"+instance.label+".json");
+    myfile.open ("data/"+instance.label+".out.json");
     myfile << s.GetString();
     myfile.close();
 
@@ -657,9 +712,9 @@ Instance readJSONFile(char* local) {
             train.route=std::to_string(d["service_intentions"].GetArray()[i]["route"].GetInt());
         else
             train.route=d["service_intentions"].GetArray()[i]["route"].GetString();
+        std::vector<Requirement*> re;
 
         for (int j = 0; j <d["service_intentions"].GetArray()[i]["section_requirements"].GetArray().Size() ; ++j) {
-            std::vector<Requirement*> re;
             string id="",delay="";
             string entry_ea="",exit_earliest="",type="",min_stopping_time="",marker="",exit_latest="",entry_latest="";
             if(d["service_intentions"].GetArray()[i]["section_requirements"].GetArray()[j].HasMember("entry_latest"))
@@ -725,14 +780,15 @@ Instance readJSONFile(char* local) {
                                             delay,
                                             exit_earliest,entry_latest,exit_latest);
                 r->connections = clist;
+                //printf("Marker!: %s \n",marker.c_str());
                 //std::cout << r << std::endl;
                 //r.toString();
                 re.push_back(r);
             }
-            train.t=re;
 
 
         }
+        train.t=re;
 
 
         tt.push_back(train);
@@ -746,6 +802,7 @@ Instance readJSONFile(char* local) {
     std::map<std::string,std::vector<route_section*>> exitMap;
     std::map<std::string,std::vector<route_section*>> markerMap;
 
+    std::map<std::string,std::map<int,route_section*>> secMap;
 
 
     for (int m = 0; m < d["routes"].GetArray().Size(); ++m) {
@@ -780,8 +837,8 @@ Instance readJSONFile(char* local) {
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray().Size(); ++k) {
                         std::string e =d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_entry"].GetArray()[k].GetString();
                         temp.push_front(e);
-                    std::string c = e +"_"+ r.id;
-                        //printf("Entry: %s s %d\n",c.c_str(),rs->sequence_number);
+                    std::string c = e +"^"+ r.id;
+//                            printf("Entry: %s s %d\n",c.c_str(),rs->sequence_number);
                         if(entryMap.find(c)!=entryMap.end()){
                             entryMap[c].push_back(rs);
                         } else {
@@ -800,8 +857,8 @@ Instance readJSONFile(char* local) {
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray().Size(); ++k) {
                         std::string e =d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["route_alternative_marker_at_exit"].GetArray()[k].GetString();
                         temp.push_front(e);
-                        std::string c = e +"_"+ r.id;
-                        //printf("Exit: %s s %d\n",c.c_str(),rs->sequence_number);
+                        std::string c = e +"^"+ r.id;
+//                            printf("Exit: %s s %d\n",c.c_str(),rs->sequence_number);
                         if(exitMap.find(c)!=exitMap.end()){
                             exitMap[c].push_back(rs);
                         } else {
@@ -820,8 +877,8 @@ Instance readJSONFile(char* local) {
                                     d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray().Size(); ++k) {
                         std::string e = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["section_marker"].GetArray()[k].GetString();
                         temp.push_front(e);
-                        std::string c = r.id +"_"+e;
-                        //printf("Exit: %s s %d\n",c.c_str(),rs->sequence_number);
+                        std::string c = r.id +"^"+e;
+//                        printf("Marker: %s s %d\n",c.c_str(),rs->sequence_number);
                         if(markerMap.find(c)!=exitMap.end()){
                             markerMap[c].push_back(rs);
                         } else {
@@ -863,7 +920,8 @@ Instance readJSONFile(char* local) {
                 } else
                     rs->penalty = 0;
                 if(rs->penalty != 0)
-                    route_pen.insert(std::pair<std::string, double>(r.id+"_"+std::to_string(rs->sequence_number),rs->penalty));
+                    route_pen.insert(std::pair<std::string, double>(r.id+"^"+std::to_string(rs->sequence_number),rs->penalty));
+                rs->route_pathName=rp.id;
                 rs->starting_point = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["starting_point"].GetString();
                 rs->minimum_running_time = d["routes"].GetArray()[m]["route_paths"].GetArray()[i]["route_sections"][j]["minimum_running_time"].GetString();
                 rs->minimum_running_time = rs->minimum_running_time.substr(2, 2);
@@ -893,6 +951,20 @@ Instance readJSONFile(char* local) {
                 }
 
                 rs1=rs;
+
+                if(secMap.find(r.id)!=secMap.end()) {
+                    if (secMap[r.id].find(rs->sequence_number) == secMap[r.id].end()) {
+                        secMap[r.id].insert(std::pair<int,route_section*>(rs->sequence_number,rs));
+                    } else{
+                        printf("OPS: This should not happen: line 959\n");
+                        std::exit(1);
+                    }
+
+                } else {
+                    std::map<int,route_section*> mapT;
+                    mapT.insert(std::pair<int,route_section*>(rs->sequence_number,rs));
+                    secMap.insert(std::pair<std::string,std::map<int,route_section*>>(r.id,mapT));
+                }
                 rsl.push_front(rs1);
                 rs= new route_section();
 
@@ -912,6 +984,7 @@ Instance readJSONFile(char* local) {
     Instance.entryMap=entryMap;
     Instance.markerMap=markerMap;
     Instance.route_pen=route_pen;
+    Instance.sectionMap=secMap;
     Instance.end=end1;
 
     std::list<Resource> reso;

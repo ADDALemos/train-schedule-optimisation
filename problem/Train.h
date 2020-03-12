@@ -15,7 +15,6 @@ public:
     std::string id;
     std::string route;
     std::vector<Requirement*> t;
-    std::vector<route_section*> results;
 };
 
 

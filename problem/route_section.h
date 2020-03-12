@@ -21,6 +21,7 @@ public:
     std::string starting_point;
     std::string minimum_running_time;//
     std::string ending_point;
+    std::string route_pathName;
 
 
 

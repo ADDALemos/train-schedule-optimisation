@@ -458,12 +458,12 @@ void MaxSAT::printAnswer(int type) {
   switch (type) {
   case _SATISFIABLE_:
     printf("s SATISFIABLE\n");
-    //if (print_model)
+    if (print_model)
       printModel();
     break;
   case _OPTIMUM_:
     printf("s OPTIMUM FOUND\n");
-    //if (print_model)
+    if (print_model)
       printModel();
     break;
   case _UNSATISFIABLE_:

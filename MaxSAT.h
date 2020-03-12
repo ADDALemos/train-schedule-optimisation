@@ -157,6 +157,9 @@ public:
   void setPrintModel(bool model) { print_model = model; }
   bool getPrintModel() { return print_model; }
 
+// Properties of the MaxSAT formula
+//
+vec<lbool> model;
 protected:
   // Interface with the SAT solver
   //
@@ -167,9 +170,7 @@ protected:
 
   void newSATVariable(Solver *S); // Creates a new variable in the SAT solver.
 
-  // Properties of the MaxSAT formula
-  //
-  vec<lbool> model; // Stores the best satisfying model.
+    // Stores the best satisfying model.
     StatusCode searchStatus; // Stores the current state of the formula
     void reserveSATVariables(Solver *S, unsigned maxVariable); // Reserve space for multiple variables in the SAT solver.
     void printBound(int64_t bound); // Print the current bound.
