@@ -122,7 +122,7 @@ static void SIGINT_exit(int signum) {
 
 int size=-1;
 Instance readJSONFile(char *);
-
+Instance readOutputJSONFile(char*);
 void outputJSONFile(Instance instance);
 
 
@@ -131,6 +131,7 @@ using namespace rapidjson;
 using namespace std;
 
 int main(int argc, char **argv) {
+//    readOutputJSONFile(argv[1]);
     double initial_time = cpuTime();
 
     try {
@@ -442,7 +443,20 @@ int main(int argc, char **argv) {
         }
         maxsat_formula->addObjFunction(of);
 
+        printf("Time\n");
 
+        for (int j = 0; j < instance.train.size(); ++j) {
+            printf("%d\n",j);
+            for(Requirement *r: instance.train[j].t){
+                printf("ee: %d el: %d xe: %d xl: %d\n",r->sec_entry_earliest,r->sec_entry_latest,
+                       r->sec_exit_earliest,r->sec_exit_latest);
+
+            }
+
+        }
+        //for all path
+        //30000+ d+ d <= 31800
+        //30000+ d >= 3600
 
         /*compact graph
        for (std::list<Route>::iterator it=instance.route.begin(); it != instance.route.end(); ++it)
@@ -683,6 +697,46 @@ void outputJSONFile(Instance instance) {
     myfile << s.GetString();
     myfile.close();
 
+
+
+
+}
+
+Instance readOutputJSONFile(char* local) {
+    ifstream ifs(local);
+    IStreamWrapper isw(ifs);
+    Document d;
+    d.ParseStream(isw);
+
+    Instance instance;
+
+    instance.hash=d["problem_instance_hash"].GetInt();
+    instance.solution_hash=d["hash"].GetInt();
+    instance.label=d["problem_instance_label"].GetString();
+    std::map<std::string,std::map<int,train_run_sections*>> results;
+    for (int i = 0; i < d["train_runs"].GetArray().Size(); ++i) {
+        std::string service_intention_id = std::to_string(d["train_runs"].GetArray()[i]["service_intention_id"].GetInt());
+        std::map<int,train_run_sections*> res;
+        for (int j = 0; j < d["train_runs"].GetArray()[i]["train_run_sections"].GetArray().Size(); ++j) {
+            train_run_sections* trs =new train_run_sections();
+            trs->entry_time=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["entry_time"].GetString();
+            trs->exit_time=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["exit_time"].GetString();
+            trs->route=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route"].GetInt();
+            if(d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route_section_id"].IsString())
+                trs->route_section_id=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route_section_id"].GetString();
+            else
+                trs->route_section_id=std::to_string(d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route_section_id"].GetInt());
+            trs->route_path=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route_path"].GetString();
+            if(d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j].HasMember("section_requirement")){
+                if(!d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["section_requirement"].IsNull()){
+                    trs->section_requirement=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["section_requirement"].GetString();
+                }
+            }
+            res.insert(std::pair<int,train_run_sections*>(std::stoi(trs->route_section_id),trs));
+        }
+        results.insert(std::pair<std::string,std::map<int,train_run_sections*>>(service_intention_id,res));
+    }
+    return instance;
 
 
 
@@ -999,4 +1053,6 @@ Instance readJSONFile(char* local) {
 
     return Instance;
 }
+
+
 

@@ -82,14 +82,15 @@ public:
 
 
                                                                                      }
+
     std::string entry_earliest;
     std::string entry_delay_weight;
     std::string exit_earliest;
     std::string  exit_latest;
     std::string  entry_latest;
     std::list<connection> connections;
-    int sec_entry_earliest;
-    int sec_exit_earliest,sec_entry_latest,sec_exit_latest;
+    int sec_entry_earliest=-1;
+    int sec_exit_earliest=-1,sec_entry_latest=-1,sec_exit_latest=-1;
 
     const std::list<connection, std::allocator<connection> > &getConnections() {
         return connections;
