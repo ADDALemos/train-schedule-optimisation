@@ -43,7 +43,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
-
+#include <limits.h>
 #ifdef SIMP
 #include "simp/SimpSolver.h"
 #else
@@ -108,6 +108,7 @@ using namespace openwbo;
 
 static MaxSAT *mxsolver;
 #include "Test.h"
+#include "../../../../Library/Developer/CommandLineTools/usr/include/c++/v1/climits"
 
 //Print Solver stats
 void printSolverStats(MaxSATFormula*maxsat_formula,double initial_time);
@@ -131,7 +132,9 @@ using namespace rapidjson;
 using namespace std;
 
 int main(int argc, char **argv) {
+    readJSONFile(argv[1]);
 //    readOutputJSONFile(argv[1]);
+    std::exit(1);
     double initial_time = cpuTime();
 
     try {
@@ -714,14 +717,32 @@ Instance readOutputJSONFile(char* local) {
     instance.solution_hash=d["hash"].GetInt();
     instance.label=d["problem_instance_label"].GetString();
     std::map<std::string,std::map<int,train_run_sections*>> results;
+    int distance=0;
     for (int i = 0; i < d["train_runs"].GetArray().Size(); ++i) {
-        std::string service_intention_id = std::to_string(d["train_runs"].GetArray()[i]["service_intention_id"].GetInt());
+        std::string service_intention_id;
+        if(d["train_runs"].GetArray()[i]["service_intention_id"].IsInt())
+            service_intention_id = std::to_string(d["train_runs"].GetArray()[i]["service_intention_id"].GetInt());
+        else
+            service_intention_id = d["train_runs"].GetArray()[i]["service_intention_id"].GetString();
         std::map<int,train_run_sections*> res;
+        int min=INT_MAX;
+        int max=0;
         for (int j = 0; j < d["train_runs"].GetArray()[i]["train_run_sections"].GetArray().Size(); ++j) {
+            int h1=0,m1=0,s1=0;
             train_run_sections* trs =new train_run_sections();
             trs->entry_time=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["entry_time"].GetString();
+            sscanf(trs->entry_time.c_str(), "%d:%d:%d", &h1, &m1,&s1);
+            if(((h1 * 60*60) + (m1*60)+s1)<min)
+                min=((h1 * 60*60) + (m1*60)+s1);
             trs->exit_time=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["exit_time"].GetString();
-            trs->route=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route"].GetInt();
+            sscanf(trs->exit_time.c_str(), "%d:%d:%d", &h1, &m1,&s1);
+            if(((h1 * 60*60) + (m1*60)+s1)>max)
+                max=((h1 * 60*60) + (m1*60)+s1);
+            if(d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route"].IsInt())
+                trs->route=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route"].GetInt();
+            else
+                trs->route=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route"].GetString();
+
             if(d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route_section_id"].IsString())
                 trs->route_section_id=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["route_section_id"].GetString();
             else
@@ -732,10 +753,17 @@ Instance readOutputJSONFile(char* local) {
                     trs->section_requirement=d["train_runs"].GetArray()[i]["train_run_sections"].GetArray()[j]["section_requirement"].GetString();
                 }
             }
-            res.insert(std::pair<int,train_run_sections*>(std::stoi(trs->route_section_id),trs));
+            if(trs->route_section_id.find("#")!= std::string::npos)
+                res.insert(std::pair<int,train_run_sections*>(std::stoi(trs->route_section_id.substr(
+                        trs->route_section_id.find("#")+1,trs->route_section_id.size())),trs));
+            else
+                res.insert(std::pair<int,train_run_sections*>(std::stoi(trs->route_section_id),trs));
         }
+        if((max-min)>distance)
+            distance=(max-min);
         results.insert(std::pair<std::string,std::map<int,train_run_sections*>>(service_intention_id,res));
     }
+    printf("%d\n",distance);
     return instance;
 
 
@@ -835,10 +863,42 @@ Instance readJSONFile(char* local) {
                                             exit_earliest,entry_latest,exit_latest);
                 r->connections = clist;
                 //printf("Marker!: %s \n",marker.c_str());
-                //std::cout << r << std::endl;
-                //r.toString();
+                //std::cout <<"now "<< *r << std::endl;
+                //r->toString();
+                if(re.size()>0){
+                    //std::cout <<"old "<< *re[re.size()-1] << std::endl;
+                    if(re[re.size()-1]->exit_latest.compare("")==0){
+                        if(r->entry_earliest.compare("")!=0){
+                            re[re.size()-1]->sec_exit_latest=r->sec_entry_earliest;//+re[re.size()-1]->min_stopping_time;
+                            //printf("earl  %d\n",re[re.size()-1]->sec_exit_latest);
+                        } else if(r->exit_latest.compare("")!=0){
+                            re[re.size()-1]->sec_exit_latest=r->sec_exit_latest;//+re[re.size()-1]->min_stopping_time;
+                            //printf("exit %d\n",re[re.size()-1]->sec_exit_latest);
+                        } else {
+                            re[re.size()-1]->sec_exit_latest=r->sec_exit_earliest;//+re[re.size()-1]->min_stopping_time;
+                            //printf("exit %d\n",re[re.size()-1]->sec_exit_earliest);
+                        }
+                    }
+                    if(r->entry_earliest.compare("")==0){
+                        if(re[re.size()-1]->exit_latest.compare("")!=0){
+                            r->sec_entry_earliest=re[re.size()-1]->sec_exit_latest;//+re[re.size()-1]->min_stopping_time;
+                            //printf("exit ow %d\n",r->sec_entry_earliest);
+                        } else  if(re[re.size()-1]->sec_entry_earliest!=-1){
+                            r->sec_entry_earliest=re[re.size()-1]->sec_entry_earliest;//+re[re.size()-1]->min_stopping_time;
+                            //printf("earl ow %d\n",r->sec_entry_earliest);
+                        } else {
+                            printf("shit\n");
+                        }
+                    }
+
+
+                }
                 re.push_back(r);
+
             }
+
+            //if(std::stoi(id)==d["service_intentions"].GetArray()[i]["section_requirements"].GetArray().Size())
+              //  printf("exa: %s l: %s\n",exit_earliest.c_str(),exit_latest.c_str());
 
 
         }
