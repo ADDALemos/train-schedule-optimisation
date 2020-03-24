@@ -132,9 +132,7 @@ using namespace rapidjson;
 using namespace std;
 
 int main(int argc, char **argv) {
-    readJSONFile(argv[1]);
-//    readOutputJSONFile(argv[1]);
-    std::exit(1);
+    //    readOutputJSONFile(argv[1]);
     double initial_time = cpuTime();
 
     try {
@@ -449,28 +447,43 @@ int main(int argc, char **argv) {
         printf("Time\n");
 
         for (int j = 0; j < instance.train.size(); ++j) {
-            printf("%d\n",j);
             for(Requirement *r: instance.train[j].t){
+                for (int i = r->sec_entry_earliest; i <r->sec_exit_latest ; ++i) {
+                    getVariableID("s^"+instance.train[j].id+"^"+std::to_string(i)+"^"+r->section_marker,maxsat_formula);
+                }
                 printf("ee: %d el: %d xe: %d xl: %d\n",r->sec_entry_earliest,r->sec_entry_latest,
                        r->sec_exit_earliest,r->sec_exit_latest);
 
             }
 
         }
-        //for all path
-        //30000+ d+ d <= 31800
-        //30000+ d >= 3600
+        std::map<std::string,std::map<std::string,std::map<int,route_section*>>>::iterator ittrain = instance.pathMap.begin();
 
-        /*compact graph
-       for (std::list<Route>::iterator it=instance.route.begin(); it != instance.route.end(); ++it)
-            for (std::list<route_path>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
-                for (std::list<route_section>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
+        while (ittrain != instance.pathMap.end()) {
+            std::map<std::string,std::map<int,route_section*>>::iterator itpath = ittrain->second.begin();
+            while (itpath != ittrain->second.end()) {
+                std::map<int,route_section*>::iterator itsec = itpath->second.begin();
 
+                while (itsec != itpath->second.end()) {
+                    itsec++;
                 }
+                itpath++;
+            }
+            ittrain++;
 
-                }
+        }
 
-        }*/
+
+            /*compact graph
+           for (std::list<Route>::iterator it=instance.route.begin(); it != instance.route.end(); ++it)
+                for (std::list<route_path>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
+                    for (std::list<route_section>::iterator it1=it->route_path.begin(); it1 != it1=it->route_path.end(); ++it)
+
+                    }
+
+                    }
+
+            }*/
 
 
         if (cpu_lim != 0)
@@ -1063,6 +1076,22 @@ Instance readJSONFile(char* local) {
                         }
                     }
                 }
+                if(Instance.pathMap.find(r.id)!=Instance.pathMap.end()){
+                    if(Instance.pathMap[r.id].find(rp.id)!=Instance.pathMap[r.id].end()){
+                        if(Instance.pathMap[r.id][rp.id].find(rs->sequence_number)==Instance.pathMap[r.id][rp.id].end()){
+                            Instance.pathMap[r.id][rp.id].insert(std::pair<int,route_section*>(rs->sequence_number,rs));
+                        }
+                    } else{
+                        std::map<int,route_section*> tempM; tempM.insert(std::pair<int,route_section*>(rs->sequence_number,rs));
+                        Instance.pathMap[r.id].insert(std::pair<std::string,std::map<int,route_section*>>(rp.id, tempM));
+
+                    }
+                } else{
+                    std::map<int,route_section*> tempM; tempM.insert(std::pair<int,route_section*>(rs->sequence_number,rs));
+                    std::map<std::string,std::map<int,route_section*>> tempM1; tempM1.insert(std::pair<std::string,std::map<int,route_section*>>(rp.id,tempM));
+                    Instance.pathMap.insert(std::pair<std::string,std::map<std::string,std::map<int,route_section*>>>(r.id, tempM1));
+
+                }
 
                 rs1=rs;
 
@@ -1104,7 +1133,7 @@ Instance readJSONFile(char* local) {
     std::list<Resource> reso;
     for (int l = 0; l < d["resources"].GetArray().Size(); ++l) {
       Resource resource = Resource(d["resources"].GetArray()[l]["id"].GetString(),d["resources"].GetArray()[l]["release_time"].GetString(),d["resources"].GetArray()[l]["following_allowed"].GetBool());
-      //  std::cout<<resource<<std::endl;
+        //std::cout<<resource<<std::endl;
       reso.push_front(resource);
 
     }
