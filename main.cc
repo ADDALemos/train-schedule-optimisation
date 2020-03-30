@@ -122,6 +122,7 @@ static void SIGINT_exit(int signum) {
 
 
 int size=-1;
+int minV=INT_MAX; int maxV=0;
 Instance readJSONFile(char *);
 Instance readOutputJSONFile(char*);
 void outputJSONFile(Instance instance);
@@ -134,7 +135,7 @@ using namespace std;
 int main(int argc, char **argv) {
     //    readOutputJSONFile(argv[1]);
     double initial_time = cpuTime();
-
+    clock_t myTimeStart = clock();
     try {
 #if defined(__linux__)
         fpu_control_t oldcw, newcw;
@@ -259,6 +260,11 @@ int main(int argc, char **argv) {
         BoolOption optC1("Timetabler", "opt-allocation",
                          "Optimality for Allocation?\n",
                          false);
+        IntOption option("Timetabler", "opt-time",
+                         "0 - For all section and all time\n"
+                            "1 - For all time\n"
+                                 "2 - Smart time\n",
+                         2);
 
         parseOptions(argc, argv, true);
 
@@ -445,32 +451,86 @@ int main(int argc, char **argv) {
         maxsat_formula->addObjFunction(of);
 
         printf("Time\n");
+        if(((int) option) == 0) {
+            for (int j = 0; j < instance.train.size(); ++j) {
+                int s=0;
+                for(route_path rp: instance.route[instance.train[j].route].route_path) {
+                    for (route_section *rs: rp.route_section) {
+                        PB *p=new PB();
+                        for (int i = minV; i < maxV; ++i) {
+                            p->addProduct(mkLit(getVariableID("s^"+instance.train[j].id+"^"+std::to_string(i)+"^"+std::to_string(s),maxsat_formula)),1);
+                        }
+                        if(p->_lits.size()>0)
+                            maxsat_formula->addPBConstraint(p);
+                        s++;
 
-        for (int j = 0; j < instance.train.size(); ++j) {
-            for(Requirement *r: instance.train[j].t){
-                for (int i = r->sec_entry_earliest; i <r->sec_exit_latest ; ++i) {
-                    getVariableID("s^"+instance.train[j].id+"^"+std::to_string(i)+"^"+r->section_marker,maxsat_formula);
+
+                    }
                 }
-                printf("ee: %d el: %d xe: %d xl: %d\n",r->sec_entry_earliest,r->sec_entry_latest,
-                       r->sec_exit_earliest,r->sec_exit_latest);
+            }
+        } else if(((int) option) == 1) {
+            for (int j = 0; j < instance.train.size(); ++j) {
+                int s=0;
+                for(Requirement *r: instance.train[j].t){
+                    PB *p=new PB();
+                    for (int i = minV; i < maxV; ++i) {
+                        p->addProduct(mkLit(getVariableID("s^"+instance.train[j].id+"^"+std::to_string(i)+"^"+std::to_string(s),maxsat_formula)),1);
+                    }
+                    if(p->_lits.size()>0)
+                        maxsat_formula->addPBConstraint(p);
+                    s++;
+
+
+                }
 
             }
+        } else {
+            for (int j = 0; j < instance.train.size(); ++j) {
+                for(Requirement *r: instance.train[j].t){
+                    PB *p=new PB();
+                    for (int i = r->sec_entry_earliest; i <r->sec_exit_latest ; ++i) {
+                        p->addProduct(mkLit(getVariableID("s^"+instance.train[j].id+"^"+std::to_string(i)+"^"+r->section_marker,maxsat_formula)),1);
+                    }
+                    if(p->_lits.size()>0)
+                        maxsat_formula->addPBConstraint(p);
+                    /*printf("ee: %d el: %d xe: %d xl: %d\n",r->sec_entry_earliest,r->sec_entry_latest,
+                               r->sec_exit_earliest,r->sec_exit_latest);*/
+
+                }
+            }
+
+
 
         }
+
+
         std::map<std::string,std::map<std::string,std::map<int,route_section*>>>::iterator ittrain = instance.pathMap.begin();
+        /*for(Requirement *r: instance.train[std::stoi(ittrain->first)].t) {
+            //PB *p=new PB();
+            while (ittrain != instance.pathMap.end()) {
+                std::map < std::string, std::map < int, route_section * >> ::iterator
+                itpath = ittrain->second.begin();
+                vec<Lit> tl;
+                while (itpath != ittrain->second.end()) {
+                    std::map<int, route_section *>::iterator itsec = itpath->second.begin();
+                    tl.push(mkLit(getVariableID("p^"+instance.train[std::stoi(ittrain->first)].id+"^"+itpath->first,maxsat_formula)));
 
-        while (ittrain != instance.pathMap.end()) {
-            std::map<std::string,std::map<int,route_section*>>::iterator itpath = ittrain->second.begin();
-            while (itpath != ittrain->second.end()) {
-                std::map<int,route_section*>::iterator itsec = itpath->second.begin();
+                    while (itsec != itpath->second.end()) {
+                        vec<Lit> tl1;
+                        tl1.push(~mkLit(getVariableID("p^"+instance.train[std::stoi(ittrain->first)].id+"^"+itpath->first,maxsat_formula)));
+                        /*tl1.push(mkLit(getVariableID(
+                                "t^" + instance.train[ittrain->first].id + "^" + std::to_string(instance.markerMap[instance.train[j].id+"^"+r->section_marker][k]->sequence_number),maxsat_formula)));
 
-                while (itsec != itpath->second.end()) {
-                    itsec++;
+                        ///p->addProduct(mkLit(getVariableID("s^"+instance.train[ittrain->first].id+"^"+std::to_string(i)+"^"+r->section_marker,maxsat_formula)),1);
+
+                        itsec++;
+                    }
+                    itpath++;
                 }
-                itpath++;
-            }
-            ittrain++;
+                ittrain++;
 
+            }
+            //maxsat_formula->addPBConstraint(p);
         }
 
 
@@ -488,8 +548,15 @@ int main(int argc, char **argv) {
 
         if (cpu_lim != 0)
             ;
-
-
+        /*vec<Lit> t; t.push(mkLit(getVariableID("a_1",maxsat_formula)));
+        maxsat_formula->addHardClause(t);
+        vec<Lit> t1;
+        t1.push(~mkLit(getVariableID("a_2",maxsat_formula)));
+        t1.push(~mkLit(getVariableID("a_1",maxsat_formula)));
+        maxsat_formula->addHardClause(t1);
+        vec<Lit> t2;
+        t2.push(mkLit(getVariableID("a_2",maxsat_formula)));
+        maxsat_formula->addHardClause(t2);*/
 
         S->loadFormula(maxsat_formula);
         printSolverStats(maxsat_formula,initial_time);
@@ -508,9 +575,9 @@ int main(int argc, char **argv) {
                     break;
             }
         }
-
-        if(S->search()) {
-            for (int i = 0; i < S->model.size(); i++) {
+        StatusCode code = S->search();
+        if(code==_SATISFIABLE_||code==_OPTIMUM_) {
+            /*for (int i = 0; i < S->model.size(); i++) {
                 indexMap::const_iterator iter = maxsat_formula->getIndexToName().find(i);
                 if (iter != maxsat_formula->getIndexToName().end()) {
                     if (S->model[i] != l_False) {
@@ -549,10 +616,16 @@ int main(int argc, char **argv) {
 
                 }
             }
-            outputJSONFile(instance);
+
+            outputJSONFile(instance);*/
+        } else {
+            std::cout<<"b"<<std::endl;
+            vec<Lit>* res = S->getConflict();
+            printf("w %d q\n",res->size());
         }
+        std::cout<<"end"<<std::endl;
 
-
+        std::cout<<(clock() - myTimeStart) / CLOCKS_PER_SEC<<std::endl;
 
 
     } catch (OutOfMemoryException &) {
@@ -879,6 +952,10 @@ Instance readJSONFile(char* local) {
                 //std::cout <<"now "<< *r << std::endl;
                 //r->toString();
                 if(re.size()>0){
+                    if(minV > r->sec_entry_earliest&&r->sec_exit_earliest !=-1)
+                        minV=r->sec_entry_earliest;
+                    if(maxV < r->sec_exit_latest &&r->sec_exit_latest !=-1)
+                        maxV=r->sec_exit_latest;
                     //std::cout <<"old "<< *re[re.size()-1] << std::endl;
                     if(re[re.size()-1]->exit_latest.compare("")==0){
                         if(r->entry_earliest.compare("")!=0){
