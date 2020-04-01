@@ -115,7 +115,13 @@ namespace openwbo {
     bool satisfiedSoft(int i);
 
     void printConfiguration();
-    
+      void getConflict(){
+          for (int i = 0; i <solver->errorP.size() ; ++i) {
+              errorP.push(solver->errorP[i]);
+          }
+     }
+
+
   protected:
     //Data Structures
     

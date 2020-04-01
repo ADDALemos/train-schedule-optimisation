@@ -399,10 +399,11 @@ bool Solver::addClause_(vec <Lit> &ps) {
 
     assert(decisionLevel() == 0);
     if(!ok) return false;
+    vec <Lit> psc;
+    ps.copyTo(psc);
 
     // Check if clause is satisfied and remove false/duplicate literals:
     sort(ps);
-
     vec <Lit> oc;
     oc.clear();
 
@@ -448,11 +449,14 @@ bool Solver::addClause_(vec <Lit> &ps) {
     }
 
 
-    if(ps.size() == 0)
+    if(ps.size() == 0) {
+        for (int k = 0; k < psc.size(); ++k) {
+            errorP.push(psc[k]);
+        }
         return ok = false;
-    else if(ps.size() == 1) {
+    } else if(ps.size() == 1) {
         uncheckedEnqueue(ps[0]);
-        return ok = (propagate() == CRef_Undef);
+        return  (propagate() == CRef_Undef);
     } else {
         CRef cr = ca.alloc(ps, false);
         clauses.push(cr);
@@ -1054,6 +1058,7 @@ void Solver::bumpForceUNSAT(Lit q) {
 |________________________________________________________________________________________________@*/
 CRef Solver::propagate() {
     CRef confl = CRef_Undef;
+    vec<Lit> tempL;
     int num_props = 0;
     watches.cleanAll();
     watchesBin.cleanAll();
@@ -1092,6 +1097,10 @@ CRef Solver::propagate() {
             // Make sure the false literal is data[1]:
             CRef cr = i->cref;
             Clause &c = ca[cr];
+            tempL.clear();
+            for (int l = 0; l < c.size(); ++l) {
+                tempL.push(c[l]);
+            }
             assert(!c.getOneWatched());
             Lit false_lit = ~p;
             if(c[0] == false_lit)
@@ -1172,6 +1181,13 @@ CRef Solver::propagate() {
 
     propagations += num_props;
     simpDB_props -= num_props;
+    if(confl == CRef_Undef){
+        for (int i = 0; i <tempL.size() ; ++i) {
+            errorP.push(tempL[i]);
+        }
+    }
+
+
 
     return confl;
 }
@@ -1347,7 +1363,6 @@ void Solver::rebuildOrderHeap() {
 |________________________________________________________________________________________________@*/
 bool Solver::simplify() {
     assert(decisionLevel() == 0);
-
     if(!ok) return ok = false;
     else {
         CRef cr = propagate();
@@ -1499,8 +1514,9 @@ lbool Solver::search(int nof_conflicts) {
         if(decisionLevel() == 0) { // We import clauses FIXME: ensure that we will import clauses enventually (restart after some point)
             parallelImportUnaryClauses();
 
-            if(parallelImportClauses())
+            if(parallelImportClauses()) {
                 return l_False;
+            }
 
         }
         CRef confl = propagate();
@@ -1765,9 +1781,12 @@ lbool Solver::solve_(bool do_simp, bool turn_off_simp) // Parameters are useless
         exit(-1);
     }
 
+
+    if(!ok) {
+        return l_False;
+    }
     model.clear();
     conflict.clear();
-    if(!ok) return l_False;
     double curTime = cpuTime();
 
     solves++;

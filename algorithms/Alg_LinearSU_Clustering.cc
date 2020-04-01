@@ -645,8 +645,9 @@ Solver *LinearSUClustering::rebuildSolver(uint64_t min_weight) {
   for (int i = 0; i < maxsat_formula->nVars(); i++)
     newSATVariable(S);
 
-  for (int i = 0; i < maxsat_formula->nHard(); i++)
+  for (int i = 0; i < maxsat_formula->nHard(); i++) {
     S->addClause(maxsat_formula->getHardClause(i).clause);
+  }
 
   for (int i = 0; i < maxsat_formula->nPB(); i++) {
     Encoder *enc = new Encoder(_INCREMENTAL_NONE_, _CARD_MTOTALIZER_,

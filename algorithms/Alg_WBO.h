@@ -66,6 +66,11 @@ public:
   }
 
   StatusCode search(); // WBO search.
+    void getConflict(){
+      for (int i = 0; i <solver->errorP.size() ; ++i) {
+        errorP.push(solver->errorP[i]);
+      }
+    }
 
 protected:
   // Rebuild MaxSAT solver

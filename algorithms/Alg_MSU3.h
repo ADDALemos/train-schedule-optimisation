@@ -59,6 +59,11 @@ public:
   }
 
   StatusCode search(); // MSU3 search.
+    void getConflict(){
+        for (int i = 0; i <solver->errorP.size() ; ++i) {
+            errorP.push(solver->errorP[i]);
+        }
+    }
 
   // Print solver configuration.
   void printConfiguration() {

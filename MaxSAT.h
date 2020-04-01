@@ -107,8 +107,10 @@ public:
   // Print configuration of the MaxSAT solver.
   // virtual void printConfiguration();
   void printConfiguration();
+    virtual void getConflict(){ throw "Error";}
 
-  // Encoding information.
+
+    // Encoding information.
   void print_AMO_configuration(int encoding);
   void print_PB_configuration(int encoding);
   void print_Card_configuration(int encoding);
@@ -160,6 +162,7 @@ public:
 // Properties of the MaxSAT formula
 //
 vec<lbool> model;
+    vec<Lit> errorP;
 protected:
   // Interface with the SAT solver
   //

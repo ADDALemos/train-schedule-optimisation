@@ -69,6 +69,11 @@ public:
   }
 
     StatusCode search(); // Linear search.
+    void getConflict(){
+        for (int i = 0; i <solver->errorP.size() ; ++i) {
+            errorP.push(solver->errorP[i]);
+        }
+    }
 
   // Print solver configuration.
   void printConfiguration() {

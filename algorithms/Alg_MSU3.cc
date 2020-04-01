@@ -100,7 +100,7 @@ StatusCode MSU3::MSU3_iterative() {
     }
 
     if (res == l_False) {
-      lbCost++;
+        lbCost++;
       nbCores++;
       if (verbosity > 0)
         printf("c LB : %-12" PRIu64 "\n", lbCost);

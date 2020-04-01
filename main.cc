@@ -108,7 +108,6 @@ using namespace openwbo;
 
 static MaxSAT *mxsolver;
 #include "Test.h"
-#include "../../../../Library/Developer/CommandLineTools/usr/include/c++/v1/climits"
 
 //Print Solver stats
 void printSolverStats(MaxSATFormula*maxsat_formula,double initial_time);
@@ -128,6 +127,7 @@ Instance readOutputJSONFile(char*);
 void outputJSONFile(Instance instance);
 
 
+void newVar(std::string,MaxSATFormula*maxsat_formula);
 
 using namespace rapidjson;
 using namespace std;
@@ -361,6 +361,8 @@ int main(int argc, char **argv) {
                 getVariableID("t^"+instance.train[i].id+"^"+std::to_string(j),maxsat_formula);
             }
         }*/
+
+
         std::map<std::string, std::map<int,std::vector<route_section*>>>::iterator it = instance.end.begin();;
 
         while (it != instance.end.end()) {
@@ -432,23 +434,7 @@ int main(int argc, char **argv) {
             }
 
         }
-        printf("Opt\n");
-        std::map<std::string, double >::iterator itpen = instance.route_pen.begin();;
-        PBObjFunction *of = new PBObjFunction();
-        while (itpen != instance.route_pen.end()) {
-            //vec<Lit> litpen;
-            std::string rid = itpen->first.substr(0, itpen->first.find(delimiter));
-            std::string section = itpen->first.substr(itpen->first.find(delimiter) + 1, itpen->first.size());
-            //litpen.push(mkLit(getVariableID("t^" + rid + "^" + section,maxsat_formula)));
 
-            //printf("%f %s \n",itpen->second,("t^" + rid + "^" + section).c_str());
-            of->addProduct(mkLit(getVariableID(
-                    "t^" + rid + "^" + section,maxsat_formula)),ceil(itpen->second));
-            //maxsat_formula->addSoftClause(100,litpen);
-            //litpen.clear();
-            itpen++;
-        }
-        maxsat_formula->addObjFunction(of);
 
         printf("Time\n");
         if(((int) option) == 0) {
@@ -503,9 +489,27 @@ int main(int argc, char **argv) {
 
         }
 
+        printf("Opt\n");
+        std::map<std::string, double >::iterator itpen = instance.route_pen.begin();;
+        PBObjFunction *of = new PBObjFunction();
+        while (itpen != instance.route_pen.end()) {
+            //vec<Lit> litpen;
+            std::string rid = itpen->first.substr(0, itpen->first.find(delimiter));
+            std::string section = itpen->first.substr(itpen->first.find(delimiter) + 1, itpen->first.size());
+            //litpen.push(mkLit(getVariableID("t^" + rid + "^" + section,maxsat_formula)));
 
-        std::map<std::string,std::map<std::string,std::map<int,route_section*>>>::iterator ittrain = instance.pathMap.begin();
-        /*for(Requirement *r: instance.train[std::stoi(ittrain->first)].t) {
+            //printf("%f %s \n",itpen->second,("t^" + rid + "^" + section).c_str());
+            of->addProduct(mkLit(getVariableID(
+                    "t^" + rid + "^" + section,maxsat_formula)),ceil(itpen->second));
+            //maxsat_formula->addSoftClause(100,litpen);
+            //litpen.clear();
+            itpen++;
+        }
+        maxsat_formula->addObjFunction(of);
+
+
+        /*std::map<std::string,std::map<std::string,std::map<int,route_section*>>>::iterator ittrain = instance.pathMap.begin();
+        for(Requirement *r: instance.train[std::stoi(ittrain->first)].t) {
             //PB *p=new PB();
             while (ittrain != instance.pathMap.end()) {
                 std::map < std::string, std::map < int, route_section * >> ::iterator
@@ -513,11 +517,11 @@ int main(int argc, char **argv) {
                 vec<Lit> tl;
                 while (itpath != ittrain->second.end()) {
                     std::map<int, route_section *>::iterator itsec = itpath->second.begin();
-                    tl.push(mkLit(getVariableID("p^"+instance.train[std::stoi(ittrain->first)].id+"^"+itpath->first,maxsat_formula)));
+                    //tl.push(mkLit(getVariableID("p^"+instance.train[std::stoi(ittrain->first)].id+"^"+itpath->first,maxsat_formula)));
 
                     while (itsec != itpath->second.end()) {
                         vec<Lit> tl1;
-                        tl1.push(~mkLit(getVariableID("p^"+instance.train[std::stoi(ittrain->first)].id+"^"+itpath->first,maxsat_formula)));
+                        //tl1.push(~mkLit(getVariableID("p^"+instance.train[std::stoi(ittrain->first)].id+"^"+itpath->first,maxsat_formula)));
                         /*tl1.push(mkLit(getVariableID(
                                 "t^" + instance.train[ittrain->first].id + "^" + std::to_string(instance.markerMap[instance.train[j].id+"^"+r->section_marker][k]->sequence_number),maxsat_formula)));
 
@@ -531,7 +535,7 @@ int main(int argc, char **argv) {
 
             }
             //maxsat_formula->addPBConstraint(p);
-        }
+        }*/
 
 
             /*compact graph
@@ -548,15 +552,7 @@ int main(int argc, char **argv) {
 
         if (cpu_lim != 0)
             ;
-        /*vec<Lit> t; t.push(mkLit(getVariableID("a_1",maxsat_formula)));
-        maxsat_formula->addHardClause(t);
-        vec<Lit> t1;
-        t1.push(~mkLit(getVariableID("a_2",maxsat_formula)));
-        t1.push(~mkLit(getVariableID("a_1",maxsat_formula)));
-        maxsat_formula->addHardClause(t1);
-        vec<Lit> t2;
-        t2.push(mkLit(getVariableID("a_2",maxsat_formula)));
-        maxsat_formula->addHardClause(t2);*/
+
 
         S->loadFormula(maxsat_formula);
         printSolverStats(maxsat_formula,initial_time);
@@ -576,8 +572,17 @@ int main(int argc, char **argv) {
             }
         }
         StatusCode code = S->search();
-        if(code==_SATISFIABLE_||code==_OPTIMUM_) {
-            /*for (int i = 0; i < S->model.size(); i++) {
+        while(code!=_SATISFIABLE_&&code!=_OPTIMUM_){
+            S->getConflict();
+            for (int i = 0; i < S->errorP.size(); i++) {
+                indexMap::const_iterator iter = maxsat_formula->getIndexToName().find(i);
+                if (iter != maxsat_formula->getIndexToName().end()) {
+                    newVar(iter->second,maxsat_formula);
+                }
+            }
+            code = S->search();
+        }
+        for (int i = 0; i < S->model.size(); i++) {
                 indexMap::const_iterator iter = maxsat_formula->getIndexToName().find(i);
                 if (iter != maxsat_formula->getIndexToName().end()) {
                     if (S->model[i] != l_False) {
@@ -617,12 +622,10 @@ int main(int argc, char **argv) {
                 }
             }
 
-            outputJSONFile(instance);*/
-        } else {
-            std::cout<<"b"<<std::endl;
-            vec<Lit>* res = S->getConflict();
-            printf("w %d q\n",res->size());
-        }
+            outputJSONFile(instance);
+
+
+
         std::cout<<"end"<<std::endl;
 
         std::cout<<(clock() - myTimeStart) / CLOCKS_PER_SEC<<std::endl;
@@ -636,7 +639,9 @@ int main(int argc, char **argv) {
     }
 }
 
+void newVar(std::string name,MaxSATFormula*maxsat_formula){
 
+}
 
 
 void printSolverStats(MaxSATFormula*maxsat_formula,double initial_time){

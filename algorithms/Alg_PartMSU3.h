@@ -55,7 +55,8 @@ protected:
     vec<Lit> *encoding_assumptions;
 
   public:
-    inline TreeNode(TreeNode *parent = NULL)
+
+      inline TreeNode(TreeNode *parent = NULL)
         : parent(parent), lb(0), encoder(NULL), encoding_assumptions(NULL) {}
     inline TreeNode(vec<int> &parts, TreeNode *parent = NULL)
         : parent(parent), lb(0), encoder(NULL), encoding_assumptions(NULL) {
@@ -104,6 +105,11 @@ public:
       delete this->solver;
     }
   }
+    void getConflict(){
+      for (int i = 0; i <solver->errorP.size() ; ++i) {
+        errorP.push(solver->errorP[i]);
+      }
+    }
 
   StatusCode search();
 

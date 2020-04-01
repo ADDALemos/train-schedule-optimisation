@@ -81,6 +81,11 @@ public:
   }
 
   void initializeCluster();
+    void getConflict(){
+        for (int i = 0; i <solver->errorP.size() ; ++i) {
+            errorP.push(solver->errorP[i]);
+        }
+    }
 
     StatusCode search(); // Linear search.
 
