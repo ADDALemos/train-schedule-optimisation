@@ -7,7 +7,7 @@
 
 #include "Instance.h"
 
-void size(Instance *i){
+void stat(Instance instance, int minV,int maxV){
     int res=0;int sec=0;
     for (int j = 0; j < instance.train.size(); ++j) {
         int s = 0;
@@ -18,8 +18,13 @@ void size(Instance *i){
             }
         }
     }
+    printf("Number of Trains: %d\n",instance.train.size());
     printf("Number of Sections: %d\n",sec);
     printf("Number of Resources: %d\n",res);
+    printf("MaxTime: %d\n",maxV-minV);
+    printf("Number of Resources: %d\n",instance.resource.size());
+
+
 
 }
 
