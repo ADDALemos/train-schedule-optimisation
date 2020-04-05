@@ -57,24 +57,84 @@ public:
                                                                                     exit_earliest(exit_earliest),entry_latest(entry_latest),exit_latest(exit_latest)
                                                                                      {
                                                                                          if(entry_earliest!=""){
-                                                                                             int h=0,m=0,s=0;
-                                                                                             sscanf(entry_earliest.c_str(), "%d:%d:%d", &h, &m,&s);
-                                                                                             sec_entry_earliest = (h * 60*60) + (m*60)+s;
+                                                                                             if(entry_earliest.find("-")!=std::string::npos){
+                                                                                                 //2010-10-26T10:05:00.000+02:00
+                                                                                                 int y=0, mo=0,d=0, ms=0,h = 0, m = 0, s = 0,ti=0,ti0=0;
+                                                                                                 sscanf(entry_earliest.c_str(),
+                                                                                                        "%d-%d-%dT%d:%d:%d+ti:ti0",&y,&mo,&d, &h,
+                                                                                                        &m, &s,&ms,&ti,&ti0);
+                                                                                                 sec_entry_earliest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             } else {
+                                                                                                 int h = 0, m = 0, s = 0;
+                                                                                                 sscanf(entry_earliest.c_str(),
+                                                                                                        "%d:%d:%d", &h,
+                                                                                                        &m, &s);
+                                                                                                 sec_entry_earliest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             }
                                                                                          }
                                                                                          if(entry_latest!=""){
-                                                                                             int h=0,m=0,s=0;
-                                                                                             sscanf(entry_latest.c_str(), "%d:%d:%d", &h, &m,&s);
-                                                                                             sec_entry_latest = (h * 60*60) + (m*60)+s;
+                                                                                             if(entry_latest.find("-")!=std::string::npos){
+                                                                                                 //2010-10-26T10:05:00.000+02:00
+                                                                                                 int y=0, mo=0,d=0, ms=0,h = 0, m = 0, s = 0,ti=0,ti0=0;
+                                                                                                 sscanf(entry_latest.c_str(),
+                                                                                                        "%d-%d-%dT%d:%d:%d+ti:ti0",&y,&mo,&d, &h,
+                                                                                                        &m, &s,&ms,&ti,&ti0);
+                                                                                                 sec_entry_latest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             } else {
+                                                                                                 int h = 0, m = 0, s = 0;
+                                                                                                 sscanf(entry_latest.c_str(),
+                                                                                                        "%d:%d:%d", &h,
+                                                                                                        &m, &s);
+                                                                                                 sec_entry_latest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             }
                                                                                          }
                                                                                          if(exit_latest!=""){
-                                                                                             int h=0,m=0,s=0;
-                                                                                             sscanf(exit_latest.c_str(), "%d:%d:%d", &h, &m,&s);
-                                                                                             sec_exit_latest = (h * 60*60) + (m*60)+s;
+                                                                                             if(exit_latest.find("-")!=std::string::npos){
+                                                                                                 //2010-10-26T10:05:00.000+02:00
+                                                                                                 int y=0, mo=0,d=0, ms=0,h = 0, m = 0, s = 0,ti=0,ti0=0;
+                                                                                                 sscanf(exit_latest.c_str(),
+                                                                                                        "%d-%d-%dT%d:%d:%d+ti:ti0",&y,&mo,&d, &h,
+                                                                                                        &m, &s,&ms,&ti,&ti0);
+                                                                                                 sec_exit_latest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             } else {
+                                                                                                 int h = 0, m = 0, s = 0;
+                                                                                                 sscanf(exit_latest.c_str(),
+                                                                                                        "%d:%d:%d", &h,
+                                                                                                        &m, &s);
+                                                                                                 sec_exit_latest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             }
                                                                                          }
                                                                                          if(exit_earliest!=""){
-                                                                                             int h=0,m=0,s=0;
-                                                                                             sscanf(exit_earliest.c_str(), "%d:%d:%d", &h, &m,&s);
-                                                                                             sec_exit_earliest = (h * 60*60) + (m*60)+s;
+                                                                                             if(exit_earliest.find("-")!=std::string::npos){
+                                                                                                 //2010-10-26T10:05:00.000+02:00
+                                                                                                 int y=0, mo=0,d=0, ms=0,h = 0, m = 0, s = 0,ti=0,ti0=0;
+                                                                                                 sscanf(exit_earliest.c_str(),
+                                                                                                        "%d-%d-%dT%d:%d:%d+ti:ti0",&y,&mo,&d, &h,
+                                                                                                        &m, &s,&ms,&ti,&ti0);
+                                                                                                 sec_exit_earliest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             } else {
+                                                                                                 int h = 0, m = 0, s = 0;
+                                                                                                 sscanf(exit_earliest.c_str(),
+                                                                                                        "%d:%d:%d", &h,
+                                                                                                        &m, &s);
+                                                                                                 sec_exit_earliest =
+                                                                                                         (h * 60 * 60) +
+                                                                                                         (m * 60) + s;
+                                                                                             }
                                                                                          }
 
 
