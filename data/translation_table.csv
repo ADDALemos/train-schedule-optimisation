@@ -1,0 +1,85 @@
+#German, English
+label, label
+funktionaleAngebotsbeschreibungen, service_intentions
+funktionaleAngebotsbeschreibung, service_intention
+fahrwege, routes
+fahrweg, route
+ressourcen, resources
+ressource, resource
+parameters, parameters
+challenge, challenge
+id, id
+abschnittskennzeichen, section_marker
+abschnittsvorgaben, section_requirements
+reihenfolge, sequence_number
+typ, type
+minHaltezeit, min_stopping_time
+einVerspaetungsfaktor, entry_delay_weight
+einMin, entry_earliest
+einMax, entry_latest
+ausVerspaetungsfaktor, exit_delay_weight
+ausMin, exit_earliest
+ausMax, exit_latest
+anschluss, connection
+parkhaeuser,park
+zustaendigesGebiet,competent_Area
+disabled,disabled
+maxdauer,maxDuration
+sonstiges,others
+Regeln,Regulate
+kommerzielle Zeiten,commercial times
+kapazitaet_effektiv, capacity_effective
+Haltezeiten, Stopping_times
+ZAZ Zeit Angepasst,ZAZ time adjusted'
+weitere Vorgaben2,further_requirements2
+aufFaId,fromFaID
+zwingendeFahrzeitreserveInProzent,mandatoryTravelTimeReservePercent
+verkehrsperiode,trafficPeriod
+kapazitaet,capacity
+priorisierung,prioritization
+zusatzzeit,additionalTime
+aufEvent,onEvent
+vonEvent,fromEvent
+mindestdauer,minimum_duration
+eintritt,entry
+austritt,exit
+anschluesse, connections
+verknuepfungen, connections1
+fahrwegalternative,alternative_route
+abschnittsfolgen, route_paths
+penalty, penalty
+fahrwegabschnitte, route_sections
+startpunkt, starting_point
+endpunkt, ending_point
+minimaleFahrzeit, minimum_running_time
+ressourcenbelegungen, resource_occupations
+belegungsrichtung, occupation_direction
+zugfolgezeit, following_separation
+zugfolgeErlaubt, following_allowed
+freigabezeit, release_time
+aufZugfahrt, onto_service_intention
+minAnschlusszeit, min_connection_time
+aufAbschnittskennzeichen, onto_section_marker
+vonVerzweigungen, route_alternative_marker_at_entry
+nachVerzweigungen, route_alternative_marker_at_exit
+verkehrsplanHash, problem_instance_hash
+verkehrsplanLabel, problem_instance_label
+zugfahrten, train_runs
+funktionaleAngebotsbeschreibungId, service_intention_id
+zugfahrtabschnitte, train_run_sections
+ein, entry_time
+aus, exit_time
+fahrwegabschnitt, route_section
+abschnittsfolge, route_path
+abschnittsvorgabe, section_requirement
+hash, hash
+fahrwegabschnittId, route_section_id
+severity, severity
+message, message
+regelVerletzungen, business_rules_violations
+loesungHash, solution_hash
+Verspaetungsminuten, minutes_of_delay
+Fahrwegpenalty, route_penalty
+details, details
+requestUuid, request_uuid
+objectiveValue, objective_value
