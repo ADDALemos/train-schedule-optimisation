@@ -113,6 +113,25 @@ int cardinalityB;
 #include "solver/LinSBPS/algorithms/Alg_OLL.h"
 #include "solver/LinSBPS/algorithms/Alg_PartMSU3.h"
 #include "solver/LinSBPS/algorithms/Alg_WBO.h"
+
+#elif MAXSATNID==3
+
+#include "solver/Open-WBO-Inc/MaxSAT.h"
+#include "solver/Open-WBO-Inc/MaxTypes.h"
+#include "solver/Open-WBO-Inc/ParserMaxSAT.h"
+#include "solver/Open-WBO-Inc/ParserPB.h"
+
+// Algorithms
+#include "solver/Open-WBO-Inc/algorithms/Alg_LinearSU.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_LinearSU_IncBMO.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_LinearSU_IncCluster.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_MSU3.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_OLL.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_OLL_IncCluster.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_PartMSU3.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_WBO.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_OBV.h"
+#include "solver/Open-WBO-Inc/algorithms/Alg_BLS.h"
 #endif
 
 //RapidJSON reader
@@ -181,6 +200,7 @@ void newVar(std::string,MaxSATFormula*maxsat_formula);
 void tt(int argc, char **argv);
 void loandra(int argc, char **argv);
 void LinSBPS(int argc, char **argv);
+void Open_WBO_Inc(int argc, char **argv);
 
 void genEncoding(int argc, char **argv);
 
@@ -207,7 +227,8 @@ int main(int argc, char **argv) {
     tt(argc,argv);
 #elif MAXSATNID==2
         loandra(argc,argv);
-
+#elif MAXSATNID==3
+        Open_WBO_Inc(argc,argv);
 #elif  MAXSATNID==4
         LinSBPS(argc,argv);
 #endif
@@ -538,6 +559,196 @@ void genEncoding(int argc, char **argv) {
             maxsat_formula->addObjFunction(of);
 }
 
+#if  MAXSATNID==3
+void Open_WBO_Inc(int argc, char **argv){
+
+BoolOption printmodel("Open-WBO", "print-model", "Print model.\n", true);
+
+    IntOption verbosity("Open-WBO", "verbosity",
+                        "Verbosity level (0=minimal, 1=more).\n", 0,
+                        IntRange(0, 1));
+
+    IntOption algorithm("Open-WBO", "algorithm",
+                        "Search algorithm "
+                        "(0=wbo,1=linear-su,2=msu3,3=part-msu3,4=oll,5=best,6="
+                        "bmo,7=obv,8=mcs)\n",
+                        6, IntRange(0, 8));
+
+    IntOption partition_strategy("PartMSU3", "partition-strategy",
+                                 "Partition strategy (0=sequential, "
+                                 "1=sequential-sorted, 2=binary)"
+                                 "(only for unsat-based partition algorithms).",
+                                 2, IntRange(0, 2));
+
+    IntOption graph_type("PartMSU3", "graph-type",
+                         "Graph type (0=vig, 1=cvig, 2=res) (only for unsat-"
+                         "based partition algorithms).",
+                         2, IntRange(0, 2));
+
+    BoolOption bmo("Open-WBO", "bmo", "BMO search.\n", true);
+
+    BoolOption complete("Open-WBO-Inc-BMO","complete","Switch to complete algorithm when Inc-BMO terminates.\n",true);
+
+    IntOption cardinality("Encodings", "cardinality",
+                          "Cardinality encoding (0=cardinality networks, "
+                          "1=totalizer, 2=modulo totalizer).\n",
+                          1, IntRange(0, 2));
+
+    IntOption amo("Encodings", "amo", "AMO encoding (0=Ladder).\n", 0,
+                  IntRange(0, 0));
+
+    IntOption pb("Encodings", "pb", "PB encoding (0=SWC,1=GTE,2=GTECluster).\n",
+                 1, IntRange(0, 2));
+
+    IntOption formula("Open-WBO", "formula",
+                      "Type of formula (0=WCNF, 1=OPB).\n", 0, IntRange(0, 1));
+
+    IntOption weight(
+        "WBO", "weight-strategy",
+        "Weight strategy (0=none, 1=weight-based, 2=diversity-based).\n", 2,
+        IntRange(0, 2));
+
+    BoolOption symmetry("WBO", "symmetry", "Symmetry breaking.\n", true);
+
+    IntOption symmetry_lim(
+        "WBO", "symmetry-limit",
+        "Limit on the number of symmetry breaking clauses.\n", 500000,
+        IntRange(0, INT32_MAX));
+
+    IntOption cluster_algorithm("Clustering", "ca",
+                                "Clustering algorithm "
+                                "(0=none, 1=DivisiveMaxSeparate)",
+                                1, IntRange(0, 1));
+    IntOption num_clusters("Clustering", "c", "Number of agglomerated clusters",
+                           100000, IntRange(1, INT_MAX));
+
+    IntOption rounding_strategy(
+        "Clustering", "rs",
+        "Statistic used to select"
+        " common weights in a cluster (0=Mean, 1=Median, 2=Min)",
+        0, IntRange(0, 2));
+
+    IntOption num_conflicts(
+      "Incomplete","conflicts","Limit on the number of conflicts.\n", 10000,
+      IntRange(0, INT32_MAX));
+
+    IntOption num_iterations(
+      "Incomplete","iterations","Limit on the number of iterations.\n", 100000,
+      IntRange(0, INT32_MAX));
+
+    BoolOption local("Incomplete", "local", "Local limit on the number of conflicts.\n", false);
+
+    IntOption optionT("Timetabler", "opt-time",
+                     "0 - For all section and all time\n"
+                             "1 - For all time\n"
+                             "2 - Smart time\n",
+                     2);
+
+
+    parseOptions(argc, argv, true);
+                         option=(int) optionT;
+
+    Statistics rounding_statistic =
+        static_cast<Statistics>((int)rounding_strategy);
+
+    switch ((int)algorithm) {
+    case _ALGORITHM_WBO_:
+      S = new WBO(verbosity, weight, symmetry, symmetry_lim);
+      break;
+
+    case _ALGORITHM_LINEAR_SU_:
+      if ((int)(cluster_algorithm) == 1) {
+        S = new LinearSUIncCluster(verbosity, bmo, cardinality, pb,
+                            ClusterAlg::_DIVISIVE_, rounding_statistic,
+                            (int)(num_clusters));
+      } else {
+        S = new LinearSU(verbosity, bmo, cardinality, pb);
+      }
+      break;
+
+    case _ALGORITHM_PART_MSU3_:
+      S = new PartMSU3(verbosity, partition_strategy, graph_type, cardinality);
+      break;
+
+    case _ALGORITHM_MSU3_:
+      S = new MSU3(verbosity);
+      break;
+
+    case _ALGORITHM_LSU_INCBMO_:
+      S = new LinearSUIncBMO(verbosity, bmo, cardinality, pb,
+                                 ClusterAlg::_DIVISIVE_, rounding_statistic,
+                                 (int)(num_clusters), complete);
+      break;
+
+    case _ALGORITHM_LSU_MRSBEAVER_:
+      S = new OBV(verbosity, cardinality, num_conflicts, num_iterations, local);
+      break;
+
+    case _ALGORITHM_LSU_MCS_:
+      S = new BLS(verbosity, cardinality, num_conflicts, num_iterations, local);
+      break;
+
+    case _ALGORITHM_OLL_:
+      if ((int)(cluster_algorithm) == 1) {
+        S = new OLLIncCluster(verbosity, cardinality, ClusterAlg::_DIVISIVE_,
+                       rounding_statistic, (int)(num_clusters));
+      } else {
+        S = new OLL(verbosity, cardinality);
+      }
+      break;
+
+    case _ALGORITHM_BEST_:
+      break;
+
+    default:
+      printf("c Error: Invalid MaxSAT algorithm.\n");
+      printf("s UNKNOWN\n");
+      exit(_ERROR_);
+    }
+
+    signal(SIGXCPU, SIGINT_exit);
+    signal(SIGTERM, SIGINT_exit);
+
+
+    genEncoding(argc,argv);
+
+    if (maxsat_formula->getProblemType() == _UNWEIGHTED_) {
+        // Unweighted
+        S = new PartMSU3(_VERBOSITY_MINIMAL_, _PART_BINARY_, RES_GRAPH,
+                         cardinality);
+        S->loadFormula(maxsat_formula);
+
+        if (((PartMSU3 *)S)->chooseAlgorithm() == _ALGORITHM_MSU3_) {
+          // FIXME: possible memory leak
+          S = new MSU3(_VERBOSITY_MINIMAL_);
+        }
+
+      } else {
+        // Weighted
+        S = new OLL(_VERBOSITY_MINIMAL_, cardinality);
+      }
+      if (S->getMaxSATFormula() == NULL) {
+      S->loadFormula(maxsat_formula);
+      if ((int)(cluster_algorithm) == 1) {
+        switch ((int)algorithm) {
+        case _ALGORITHM_LINEAR_SU_:
+          static_cast<LinearSUIncCluster *>(S)->initializeCluster();
+          break;
+        case _ALGORITHM_OLL_:
+          static_cast<OLLIncCluster *>(S)->initializeCluster();
+          break;
+        case _ALGORITHM_LSU_INCBMO_:
+          static_cast<LinearSUIncBMO *>(S)->initializeCluster();
+          break;
+        }
+      }
+    }
+
+
+
+}
+#endif
+
 #if  MAXSATNID==4
 bool g_should_print_at_the_end = true;
 void LinSBPS(int argc, char **argv){
@@ -863,6 +1074,7 @@ void loandra(int argc, char **argv){
         }
 
       } else {
+      S->loadFormula(maxsat_formula);
         // Weighted
         S = new OLL(_VERBOSITY_MINIMAL_, cardinality);
       }
