@@ -12,15 +12,17 @@
 #
 VERSION    = core
 SOLVERNAME = "Glucose4.1"
-SOLVERDIR  = glucose4.1
+SUPERSOLVERNAME=TT-Open-WBO-Inc#Loandra
+SUPERSOLVERNAMEID=1#2
+SOLVERDIR  = solver/$(SUPERSOLVERNAME)/solvers/glucose4.1
 NSPACE     = Glucose
 # THE REMAINING OF THE MAKEFILE SHOULD BE LEFT UNCHANGED
 EXEC       = timetabler
 DEPDIR     = mtl utils core
-DEPDIR     +=  ../../encodings ../../algorithms ../../graph ../../classifier ../../clusterings ../../problem   ../../rapidXMLParser
-MROOT      = $(PWD)/solvers/$(SOLVERDIR)
+DEPDIR     +=  ../../../$(SUPERSOLVERNAME) ../../encodings ../../algorithms ../../graph ../../classifier ../../clusterings ../../../../problem   ../../../../rapidXMLParser
+MROOT      = $(PWD)/$(SOLVERDIR)
 LFLAGS     += -lgmpxx -lgmp
-CFLAGS     = -O3 -Wall -Wno-parentheses -std=c++11 -DNSPACE=$(NSPACE) -DSOLVERNAME=$(SOLVERNAME) -DVERSION=$(VERSION)
+CFLAGS     =  -DMAXSATNID=$(SUPERSOLVERNAMEID)  -O3 -Wall -Wno-parentheses -std=c++11 -DNSPACE=$(NSPACE) -DSOLVERNAME=$(SOLVERNAME) -DVERSION=$(VERSION)
 ifeq ($(VERSION),simp)
 DEPDIR     += simp
 CFLAGS     += -DSIMP=1

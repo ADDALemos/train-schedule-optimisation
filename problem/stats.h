@@ -7,7 +7,7 @@
 
 #include "Instance.h"
 
-void stat(Instance instance, int minV,int maxV){
+void stat(Instance instance, int diff){
     int res=0;int sec=0;
     for (int j = 0; j < instance.train.size(); ++j) {
         int s = 0;
@@ -21,7 +21,8 @@ void stat(Instance instance, int minV,int maxV){
     printf("Number of Trains: %d\n",instance.train.size());
     printf("Number of Sections: %d\n",sec);
     printf("Number of Resources: %d\n",res);
-    printf("MaxTime: %d\n",maxV-minV);
+    printf("MaxTime: %d\n",diff);
+    printf("MaxBandwitch: %s\n",instance.maxBandabweichung.c_str());
     printf("Number of Resources: %d\n",instance.resource.size());
 
 
