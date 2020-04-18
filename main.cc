@@ -28,10 +28,16 @@
  * SOFTWARE.
  *
  */
+#ifndef MAXSATNID
+#define MAXSATNID 1
+#endif
 
+#if MAXSATNID<5
 #include "utils/Options.h"
 #include "utils/ParseUtils.h"
 #include "utils/System.h"
+#endif
+
 #include <errno.h>
 #include <signal.h>
 #include <zlib.h>
@@ -44,6 +50,7 @@
 #include <vector>
 #include <cstring>
 #include <limits.h>
+#if MAXSATNID <5
 #ifdef SIMP
 #include "simp/SimpSolver.h"
 #else
@@ -51,11 +58,10 @@
 #include "core/Solver.h"
 
 #endif
+#endif
 #include <cinttypes>
 
-#ifndef MAXSATNID
-#define MAXSATNID 1
-#endif
+
 
 
 
@@ -159,6 +165,12 @@ int cardinalityB;
 #define VER VER_(VERSION)
 #define SOLVERM VER_(SUPERSOLVERNAME)
 
+Instance  instance;
+int minV=INT_MAX; int maxV=0; int diffV=0;
+Instance readJSONFile(char *);
+int size=-1;
+
+#if MAXSATNID <5
 using NSPACE::BoolOption;
 using NSPACE::IntOption;
 using NSPACE::IntRange;
@@ -167,6 +179,7 @@ using NSPACE::StringOption;
 using NSPACE::cpuTime;
 using NSPACE::parseOptions;
 using namespace openwbo;
+
 
 //=================================================================================================
 
@@ -179,12 +192,11 @@ int getVariableID(std::string varName,MaxSATFormula*maxsat_formula);
 
 
 
-int size=-1;
+
 MaxSAT *S = NULL;
 int option;
-Instance  instance;
 MaxSATFormula *maxsat_formula;
-int minV=INT_MAX; int maxV=0; int diffV=0;
+
 Instance readJSONFile(char *);
 Instance readOutputJSONFile(char*);
 void outputJSONFile(Instance instance);
@@ -201,17 +213,39 @@ void tt(int argc, char **argv);
 void loandra(int argc, char **argv);
 void LinSBPS(int argc, char **argv);
 void Open_WBO_Inc(int argc, char **argv);
-
 void genEncoding(int argc, char **argv);
+
+#endif
+
 
 using namespace rapidjson;
 using namespace std;
 
+
+#if MAXSATNID==5
+#include "solver/SATLike/basis_pms.h"
+#include "solver/SATLike/pms.h"
+#include <signal.h>
+static Satlike s;
+int main(int argc, char **argv) {
+    instance= readJSONFile(argv[1]);
+
+    cout<<"This is Satlike3.0 solver"<<endl;
+    vector<int> init_solution;
+    s.local_search_with_decimation(init_solution,argv[1]);
+    s.print_best_solution();
+    s.free_memory();
+}
+#endif
+
+
+#if MAXSATNID <5
 int main(int argc, char **argv) {
     //    readOutputJSONFile(argv[1]);
     double initial_time = cpuTime();
     clock_t myTimeStart = clock();
     std::cout<<MAXSATNID<<std::endl;
+
     try {
 #if defined(__linux__)
         fpu_control_t oldcw, newcw;
@@ -232,6 +266,7 @@ int main(int argc, char **argv) {
 #elif  MAXSATNID==4
         LinSBPS(argc,argv);
 #endif
+
 
 
 
@@ -380,7 +415,9 @@ int main(int argc, char **argv) {
         printf("s UNKNOWN\n");
         exit(_ERROR_);
     }
+
 }
+
 
 void genEncoding(int argc, char **argv) {
 
@@ -558,6 +595,7 @@ void genEncoding(int argc, char **argv) {
     if(of->_lits.size()!=0)
             maxsat_formula->addObjFunction(of);
 }
+#endif
 
 #if  MAXSATNID==3
 void Open_WBO_Inc(int argc, char **argv){
@@ -1323,6 +1361,7 @@ void tt(int argc, char **argv) {
 }
 #endif
 
+#if  MAXSATNID<5
 void newVar(std::string name,MaxSATFormula*maxsat_formula){
 
 }
@@ -1394,6 +1433,7 @@ int getVariableID(std::string varName,MaxSATFormula*maxsat_formula) {
     return id;
 }
 
+#endif
 
 void outputJSONFile(Instance instance) {
     StringBuffer s;
