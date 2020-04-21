@@ -220,7 +220,7 @@ void genEncoding(int argc, char **argv);
 
 using namespace rapidjson;
 using namespace std;
-
+  Instance readPESPInstance(char* local);
 
 #if MAXSATNID==5
 #include "solver/SATLike/basis_pms.h"
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
     //    readOutputJSONFile(argv[1]);
     double initial_time = cpuTime();
     clock_t myTimeStart = clock();
-    std::cout<<MAXSATNID<<std::endl;
+    //readPESPInstance(argv[1]);
 
     try {
 #if defined(__linux__)
@@ -1434,6 +1434,27 @@ int getVariableID(std::string varName,MaxSATFormula*maxsat_formula) {
 }
 
 #endif
+
+
+Instance readPESPInstance(char* local){
+    Instance i;
+    std::ifstream infile(local);
+
+    int N, O, T, L, U, W;
+    std::string line;
+    while (std::getline(infile, line)) {
+        std::cout<<line<<std::endl;
+            std::istringstream iss(line);
+            if (!(iss >> N >> O >> T >> L >> U >> W )){
+                continue;
+            }
+        //std::cout<<  N << " "<< O << " "<< T << " "<< L << " " <<U << " " <<W<< std::endl;
+
+    }
+    return i;
+
+
+    }
 
 void outputJSONFile(Instance instance) {
     StringBuffer s;

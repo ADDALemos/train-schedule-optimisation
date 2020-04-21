@@ -29,7 +29,7 @@ public:
     std::map<std::string, std::map<int,std::vector<route_section*>>> end;//train end nodes sections
     std::map<std::string, double > route_pen;//
 
-    std::map<std::string,std::map<int,train_run_sections*>> results;
+    std::map<std::string,std::map<int,train_run_sections*> > results;
 
     //solution
     int solution_hash;
