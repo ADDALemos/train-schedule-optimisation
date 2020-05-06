@@ -1,70 +1,33 @@
-### README for the Open-WBO MaxSAT Solver
-### Version 2.0 -- 30 June 2017
+# How to compile the project
 
-Open-WBO is an extensible and modular open-source MaxSAT Solver.
-Open-WBO was one of the best solvers in the partial MaxSAT categories at 
-MaxSAT Evaluations 2014, 2015, 2016 and 2017 and in the decision and 
-optimization for SMALLINT categories at PB Evaluation 2016.
+`make`
 
-### MaxSAT Evaluation 2017
-# Open-WBO-RES (winner of the unweighted track of the MaxSAT Evaluation 2017)
-./open-wbo <input-file>
+The Makefile allows us to choose the MaxSAT solver to our liking.  To change the default solver ([TT-Open-WBO-INC]) change the variables: SUPERSOLVERNAME and SUPERSOLVERNAMEID.  
 
-# Open-WBO-LSU
-./open-wbo -algorithm=1 <input-file>
+# How to run the project
 
-Usage of the solver:
-./open-wbo [options] <input-file>
-
-The following options are available in Open-WBO:
-
-### Global Options
-#
-# Formula type (0=MaxSAT, 1=PB)
--formula      = <int32>  [   0 ..    1] (default: 0)
-
-# Print model
--print-model, -no-print-model (default on)
-
-# Verbosity level (0=minimal, 1=more)
--verbosity    = <int32>  [   0 ..    1] (default: 1)
-
-# Search algorithm (0=wbo,1=linear-su,2=msu3,3=part-msu3,4=oll,5=best)
--algorithm    = <int32>  [   0 ..    1] (default: 5)
-
-# BMO search 
--bmo,-no-bmo (default on)
-
-# Pseudo-Boolean encodings (0=SWC,1=GTE)
--pb           = <int32>  [   0 ..    1] (default: 1)
-
-# At-most-one encodings (0=ladder)
--amo          = <int32>  [   0 ..    0] (default: 0)
-
-# Cardinality encodings (0=cardinality networks, 1=totalizer, 2=modulo totalizer)
--cardinality  = <int32>  [   0 ..    2] (default: 1)
-
-       
-### WBO Options (algorithm=0, unsatisfiability-based algorithm)
-#
-# Weight strategy (0=none, 1=weight-based, 2=diversity-based)
--weight-strategy = <int32>  [   0 ..    2] (default: 2)
-
-# Symmetry breaking
--symmetry, -no-symmetry (default on)
-
-# Limit on the number of symmetry breaking clauses
--symmetry-limit = <int32>  [   0 .. imax] (default: 500000)
-
-### PartMSU3 OPTIONS (algorithm=3, partition-based algorithm)
-#
-# Graph type (0=vig, 1=cvig, 2=res)
--graph-type   = <int32>  [   0 ..    2] (default: 2)
-
-# Partition strategy (0=sequential, 1=sequential-sorted, 2=binary)
--partition-strategy = <int32>  [   0 ..    2] (default: 2)
+`./timetabler data/PESP/set-01/R1L1.xml -opt-time=2  [solver options]`
 
 
-Authors: Ruben Martins, Vasco Manquinho, Ines Lynce
-Contributors: Miguel Neves, Saurabh Joshi, Mikolas Janota
-To contact the authors please send an email to:  open-wbo@sat.inesc-id.pt
+The solver option depend on the solver used. Please read the solver documentation.
+
+The following options are available for all solvers:
+
+## Timetabler Options
+### Entry time variables: 0 - For all section and all time; 1 - For all time; 2 - Smart time
+```-opt-time= <int32>  [   0 ..    2]      (default: 2)```
+
+# Dependencies
+   
+ [TT-Open-WBO-INC](https://drive.google.com/file/d/140d8jDHZHo5d7WuoNpLqZXmHasgYkH38/view) solver
+ [Loandra](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/Loandra.zip)
+ [Open-WBO-Inc](https://github.com/sbjoshi/Open-WBO-Inc)
+ [LinSBPS](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/LinSBPS2018.zip)
+ [SATLike](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/SATLike3.0-c-weighted.zip)
+ c++ compiler.
+ [Rapid JSON Parser](https://rapidjson.org/)
+  
+# Data Sets
+   
+[PESP benckmark](http://num.math.uni-goettingen.de/~m.goerigk/pesplib/)
+[SBB benchmark](https://github.com/potassco/train-scheduling-with-hybrid-asp)
