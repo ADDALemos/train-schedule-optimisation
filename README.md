@@ -18,16 +18,27 @@ The following options are available for all solvers:
 ```-opt-time= <int32>  [   0 ..    2]      (default: 2)```
 
 # Dependencies
-   
- [TT-Open-WBO-INC](https://drive.google.com/file/d/140d8jDHZHo5d7WuoNpLqZXmHasgYkH38/view) solver
- [Loandra](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/Loandra.zip)
- [Open-WBO-Inc](https://github.com/sbjoshi/Open-WBO-Inc)
- [LinSBPS](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/LinSBPS2018.zip)
- [SATLike](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/SATLike3.0-c-weighted.zip)
- c++ compiler.
+
+c++ compiler.
+
  [Rapid JSON Parser](https://rapidjson.org/)
+ 
+ ## Solvers:
+   
+ [TT-Open-WBO-INC](https://drive.google.com/file/d/140d8jDHZHo5d7WuoNpLqZXmHasgYkH38/view)
+ 
+ [Loandra](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/Loandra.zip)
+ 
+ [Open-WBO-Inc](https://github.com/sbjoshi/Open-WBO-Inc)
+ 
+ [LinSBPS](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/LinSBPS2018.zip)
+ 
+ [SATLike](https://maxsat-evaluations.github.io/2019/mse19-solver-src/incomplete/SATLike3.0-c-weighted.zip)
+ 
+ 
   
 # Data Sets
    
 [PESP benckmark](http://num.math.uni-goettingen.de/~m.goerigk/pesplib/)
+
 [SBB benchmark](https://github.com/potassco/train-scheduling-with-hybrid-asp)
